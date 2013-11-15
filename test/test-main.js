@@ -9,17 +9,18 @@ for (var file in window.__karma__.files) {
 
 requirejs.config({
     // Karma serves files from '/base'
-    baseUrl: '/base/src',
+    baseUrl: '/base/compile',
 
     paths: {
-        'socket.io': '../src/vendor/socket.io'
+        'socket.io': 'vendor/socket.io',
+        'underscore' : 'vendor/underscore'
     },
 
-    // shim: {
-    //     'underscore': {
-    //         exports: '_'
-    //     }
-    // },
+    shim: {
+        'underscore' : {
+            exports: '_'
+        }
+    },
 
     // ask Require.js to load these files (all our tests)
     deps: tests,
@@ -27,3 +28,5 @@ requirejs.config({
     // start test run, once Require.js is done
     callback: window.__karma__.start
 });
+
+

@@ -25,8 +25,9 @@ module.exports = function(grunt) {
     },
     browserify: {
       client: {
-        src: ['src/main.js'],
+        src: ['compile/main.js'],
         dest: 'dist/client.js',
+        cwd: 'compile'
       }
     },
     connect: {
@@ -66,6 +67,50 @@ module.exports = function(grunt) {
             '**/*',
           ]
         }]
+      },
+      source: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: 'src',
+          dest: 'compile',
+          src: [ '**/*', '!**/*.coffee' ]
+        }]
+      },
+      tmp: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: '.tmp',
+          dest: 'compile',
+          src: [ '**/*' ]
+        }]
+      }
+    },
+    requirejs: {
+      compile: {
+        options: {
+          baseUrl: './compile',
+          name: 'caramal',
+          mainConfigFile: 'require.js',
+          out: 'dist/client.js',
+        }
+      }
+    },
+    coffee: {
+      // compile: {
+      //   files: {
+      //     src: [ 'src/**/*.js.coffee', 'src/**/*.coffee' ],
+      //     dest: '.tmp/'
+      //   }
+      // },
+      glob_to_multiple: {
+        expand: true,
+        flatten: true,
+        cwd: 'src',
+        src: ['*.coffee'],
+        dest: '.tmp/',
+        ext: '.js'
       }
     },
     mocha: {
@@ -84,29 +129,49 @@ module.exports = function(grunt) {
           // files: ['test/spec/**/*_spec.js']
         }
       }
+    },
+    clean: {
+      build: ['compile', '.tmp']
     }
   });
 
-  grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-contrib-connect');
-  // grunt.loadNpmTasks('grunt-mocha');
-  grunt.loadNpmTasks('grunt-karma');
-  grunt.loadNpmTasks('grunt-browserify');
-  // grunt.loadNpmTasks('grunt-contrib-qunit');
+  require('load-grunt-tasks')(grunt);
 
-  // grunt.loadTasks("build/tasks");
+  grunt.registerTask('copy:compile', function(target) {
+    grunt.task.run(['copy:source', 'copy:tmp']);
+  });
 
-  // These plugins provide necessary tasks.
+  grunt.registerTask('build', ['copy:compile', 'requirejs']);
 
-  // Default task.
-  grunt.registerTask('default', ['browserify', 'jshint']);
+  grunt.registerTask('default', ['coffee', 'build', 'jshint', 'clean']);
 
   grunt.registerTask('test', [
+    'coffee',
+    'build',
+    'test:chat_server',
     'connect:test',
     'karma'
   ]);
+
+  grunt.registerTask('test:chat_server', function(target) {
+    var spawn = require('child_process').spawn,
+        server = spawn('node', [ 'test/test-server.js' ]);
+
+    console.log('launch child pid: ' + server.pid);
+
+    server.stdout.on('data', function (data) {
+      console.log('chat: ' + data);
+    });
+
+    server.stderr.on('data', function (data) {
+      console.log('chat-err: ' + data);
+    });
+
+    server.on('close', function (code) {
+      console.log('child process exited with code ' + code);
+    });
+    // test_server.stdin.end();
+  });
 
   grunt.registerTask('test:keep', [ 'connect:test:keepalive' ]);
 

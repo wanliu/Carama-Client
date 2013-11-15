@@ -9,12 +9,16 @@ module.exports = function(config) {
 
 
     // frameworks to use
-    frameworks: ['requirejs', 'jasmine'],
+    frameworks: [
+      'requirejs',
+      'mocha',
+      'jasmine'],
 
 
     files: [
       // {pattern: 'lib/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
+      {pattern: 'compile/**/*.js', included: false},
       {pattern: 'test/**/*_spec.js', included: false},
 
       'test/test-main.js'
@@ -22,7 +26,7 @@ module.exports = function(config) {
 
     // list of files to exclude
     // exclude: [
-    //     'src/main.js'
+    //     'compile/vendor/underscore.js'
     // ],
 
     // test results reporter to use
