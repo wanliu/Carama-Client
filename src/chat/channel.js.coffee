@@ -1,4 +1,4 @@
-define ['core', 'manager', 'util', 'underscore', 'exports'], (Caramal, Manager, Util, _, exports) ->
+define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Manager, Util, _, exports) ->
 
   class Channel
 
@@ -36,15 +36,25 @@ define ['core', 'manager', 'util', 'underscore', 'exports'], (Caramal, Manager, 
     ###
     socket: null
 
+    @nextId = 0
+
+    @hooks = {}
+
     ###*
      * 管理器对象
      * @type {[type]}
     ###
-    manager: Caramal.MessageManager
+    @default_manager = Caramal.MessageManager
 
-    constructor: (@name, @options = {}) ->
+    constructor: (@options = {}) ->
+      @id = Channel.nextId++
+
+      manager = @options.manager || @constructor.default_manager
+
+      @setManager(manager)
       @bindSocket(@manager.client);
       @_buildCommands()
+
 
     bindSocket: (@socket) ->
 
@@ -57,8 +67,8 @@ define ['core', 'manager', 'util', 'underscore', 'exports'], (Caramal, Manager, 
       if @hasOwnProperty method
         throw new Error("always has #{method} property or function")
 
-      @[method] = (args..., options) =>
-        @command(method, args, options)
+      @[method] = (data = {}, options = {})  =>
+        @command(method, data, options)
 
     ###*
      * 接受到消息数据的回调
@@ -113,16 +123,50 @@ define ['core', 'manager', 'util', 'underscore', 'exports'], (Caramal, Manager, 
      * @param  {[Hash]} options 参数结构
      * @return {[type]}         [description]
     ###
-    command: (cmd, args..., options) ->
+    command: (cmd, data = null, options = {}) ->
 
-        return unless Util.contain(@commands, cmd)
+      return unless @commands.contain(cmd)
 
-        console.log "#{cmd.toTitleCase()}Command"
-        # Util.classify()
+      class_name = "#{cmd.toTitleCase()}Command"
+      klass = Caramal[class_name]
+      throw new Error("not have Caramal.#{class_name} class") unless klass?
+
+      command = new klass(@, cmd, options)
+
+      @_setupHooks(cmd, command)
+
+      @manager.addReturnCommand(command) if options['return']?
+      command.execute(data)
+
+    _setupHooks: (cmd, command) ->
+      hooks = @constructor.hooks
+      for name, hook of hooks
+        if hook.name == cmd
+          if hook.type == 'before'
+            command.beforeExecute(hook.proc)
+          else if hook.type == 'after'
+            command.afterExecute(hook.proc)
+          else
+            ;
+
+    @create: (options) ->
+      manager = options.manager || @default_manager
+      manager.addChannel(Channel.nextId + 1, new Channel(options))
 
 
-    create: () ->
-      channel_name = @generateId()
-      @manager.channels[channgel_name] = new Channel(Util.generateId())
+    @beforeCommand: (cmd, callback) ->
+      @hooks["before_#{cmd}"] = {
+        name: cmd,
+        proc: callback
+        type: 'before',
+      }
+
+    @afterCommand = (cmd, callback) ->
+      @hooks["after_#{cmd}"] = {
+        name: cmd,
+        proc: callback
+        type: 'after',
+      }
+
 
   exports.Channel = Channel

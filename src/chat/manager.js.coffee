@@ -26,11 +26,20 @@ define ['core', 'exports'], (Caramal, exports) ->
   class ClientMessageManager
 
     message_dispatchs: {}
+    return_commands: {}
+    channels: {}
 
     constructor: (@client) ->
       return  unless @client?
       # throw new Error('you must initialize window.client object!') unless @client?
       @bind()
+
+    addReturnCommand: (command) ->
+      unless command.option && command.option.id?
+        throw new Error('return command must have id property')
+
+      @return_commands[command.option.id] = command
+
 
     bind: () ->
       @unBind()
@@ -72,7 +81,6 @@ define ['core', 'exports'], (Caramal, exports) ->
         @client.unsubscribe('message')
         @client.unsubscribe('chat')
 
-
     setClient: (@client) ->
       @bind()
 
@@ -82,6 +90,20 @@ define ['core', 'exports'], (Caramal, exports) ->
 
     onError: (e) ->
       console.log(e)
+
+    addChannel: (id, channel) ->
+      @channels[id.toString()] = channel
+
+    addNamedChannel: (name, channel) ->
+      @channels[name] = channel
+
+    ofChannel: (id) ->
+      @channels[id.toString()]
+
+    ofNamedChannel: (name) ->
+      @channels[name]
+
+
 
 
   Caramal.MessageManager ||= new ClientMessageManager(window.client)

@@ -9,6 +9,10 @@ clients = [];
 
 io.set('log level', 1);
 
+var generateId = function() {
+  return  Math.abs(Math.random() * Math.random() * Date.now() | 0).toString() + Math.abs(Math.random() * Math.random() * Date.now() | 0).toString();
+};
+
 io.on('connection', function (socket) {
   console.log('connect');
 
@@ -20,9 +24,47 @@ io.on('connection', function (socket) {
   // });
 
   socket.on('message', function(msg){
-    log(msg);
-    io.sockets.emit('message', msg);
+    try {
+      var info = JSON.parse(msg);
+      console.log(msg);
+    } catch (e) {
+      console.log(e.message)
+    }
   });
+
+  socket.on('open', function(data){
+    try {
+      var info = JSON.parse(data);
+
+      switch(info.type) {
+      case 0:
+        break;
+      case 1:
+        io.sockets.emit('message', JSON.stringify({action: 'join', room: generateId(), type: info.type }))
+        break;
+      case 2:
+        break;
+      }
+    } catch (e) {
+      console.log(e.message)
+    }
+
+  });
+
+  socket.on('join', function(data){
+    try {
+      var info = JSON.parse(data);
+      console.log(info);
+
+      socket.join(info.room)
+    } catch (e) {
+      console.log(e.message)
+    }
+  })
+
+
+
+
 
   // socket.on('private message', function(msg){
   //   fromMsg = {from:userName, txt:msg.txt}

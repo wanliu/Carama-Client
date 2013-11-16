@@ -1,4 +1,4 @@
-define(['socket.io', 'caramal', 'manager'], function(io, Caramal){
+define(['socket.io', 'caramal', 'chat/manager'], function(io, Caramal){
 	var url = 'http://localhost:5001',
 		options ={
 		  // transports: ['websocket'],

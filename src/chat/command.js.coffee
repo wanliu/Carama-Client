@@ -19,16 +19,15 @@ define ['core', 'util'], (Caramal, Util) ->
 
   class Command
 
-    constructor: (@channel, @name, @option) ->
+    constructor: (@channel, @name, @options = {}) ->
       @socket = @channel.socket
       @option = new CommandOption(@options)
 
-    execute: (args..., options) ->
-      @_doBeforeCallback(args, options)
-      args.push options
-      @doExecute.apply(@, args)
+    execute: (data) ->
+      @_doBeforeCallback(data, {})
+      @doExecute(data, {})
 
-    doExecute: (args..., options) ->
+    doExecute: (data, options) ->
       ;
 
     beforeExecute: (@before_callback) ->
@@ -37,41 +36,41 @@ define ['core', 'util'], (Caramal, Util) ->
 
     onReturnExecute: (@return_callback) ->
 
-    _doBeforeCallback: (args...) ->
+    _doBeforeCallback: (data, options) ->
       if Util.isFunc(@before_callback)
-        @before_callback.apply(@, args)
+        @before_callback(data, options)
 
-    _doAfterCallback: (args...) ->
+    _doAfterCallback: (data, options) ->
       if Util.isFunc(@after_callback)
-        @after_callback.apply(@, args)
+        @after_callback(data, options)
 
-    _doReturnCallback: (args...) ->
+    _doReturnCallback: (data, options) ->
       if Util.isFunc(@return_callback)
-        @return_callback.apply(@, args)
+        @return_callback(data, options)
 
-    setOption: (data) ->
-      @option = new CommandOption(data)
-
-    sendCommand: (cmd, data, callback = @_doAfterCallback) ->
+    sendCommand: (cmd, data = {}, callback = @_doAfterCallback) ->
       send_data = Util.merge {
                     command_id: @option.id,
                   }, data
-      @socket.emit cmd, send_data, callback
+      @socket.emit cmd, JSON.stringify(send_data), callback
 
   class OpenCommand extends Command
 
-    doExecute: (room = null, options = {}) ->
-      @sendCommand 'open', options
+    doExecute: (data, options = {}) ->
+      @sendCommand 'open', data
 
   class JoinCommand extends Command
 
-    execute: (room = null, options = {}, callback = null) ->
-      @sendCommand 'join', options, callback
+    doExecute: (data, options = {}, callback = null) ->
+      debugger
+      unless data?
+        data = {room: @channel.options.room }
+      @sendCommand 'join', data, callback
 
   class CloseCommand extends Command
 
-    execute: (room = null, options = {}, callback = null) ->
-      @sendCommand 'leave', options, callback
+    doExecute: (data, options = {}, callback = null) ->
+      @sendCommand 'leave', data, callback
 
   Caramal.Command = Command
   Caramal.OpenCommand = OpenCommand

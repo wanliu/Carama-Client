@@ -3,7 +3,7 @@ define ['exports'], (exports) ->
   exports.isFunc = (object) ->
     typeof object == 'function'
 
-  exports.isObject = (object) ->
+  exports.isObject = (obj) ->
     # 判断是否非window和DOM对象的对象，
     if !obj || obj.toString() != "[object Object]" || obj.nodeType || obj.setInterval
       return false
@@ -19,8 +19,8 @@ define ['exports'], (exports) ->
     return key == undefined || obj.hasOwnProperty(key)
 
   exports.generateId = () ->
+    Math.abs(Math.random() * Math.random() * Date.now() | 0).toString() + \
     Math.abs(Math.random() * Math.random() * Date.now() | 0).toString()
-    + Math.abs(Math.random() * Math.random() * Date.now() | 0).toString()
 
   exports.merge = (target, other) ->
     for k, value of other
@@ -32,19 +32,18 @@ define ['exports'], (exports) ->
 
     target
 
-  exports.contain = (list, member) ->
+  exports.classify = (klass_string) ->
 
-    for e in list
-      return true if e == memeber
+  String.prototype.toTitleCase = () ->
+    @replace /\w\S*/g, (txt) ->
+      txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+
+  Array.prototype.contain = (member) ->
+
+    for e in @
+      return true if e == member
 
     false
 
-  exports.classify = (klass_string) ->
-
-  class String
-
-    toTitleCase: () ->
-      str.replace /\w\S*/g, (txt) ->
-        txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-
+  exports
 

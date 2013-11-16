@@ -19,6 +19,7 @@ module.exports = function(config) {
       // {pattern: 'lib/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
       {pattern: 'compile/**/*.js', included: false},
+      {pattern: 'compile/chat/*.js', included: false},
       {pattern: 'test/**/*_spec.js', included: false},
 
       'test/test-main.js'

@@ -1,2 +1,5 @@
 /node_modules
+/.tmp
+/.compile
+.DS_Store
 

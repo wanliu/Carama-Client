@@ -83,7 +83,7 @@ module.exports = function(grunt) {
           dot: true,
           cwd: '.tmp',
           dest: 'compile',
-          src: [ '**/*' ]
+          src: [ '**/*', '!**/*.coffee' ]
         }]
       }
     },
@@ -98,17 +98,11 @@ module.exports = function(grunt) {
       }
     },
     coffee: {
-      // compile: {
-      //   files: {
-      //     src: [ 'src/**/*.js.coffee', 'src/**/*.coffee' ],
-      //     dest: '.tmp/'
-      //   }
-      // },
       glob_to_multiple: {
         expand: true,
-        flatten: true,
+        // flatten: true,
         cwd: 'src',
-        src: ['*.coffee'],
+        src: ['**/*.coffee'],
         dest: '.tmp/',
         ext: '.js'
       }
