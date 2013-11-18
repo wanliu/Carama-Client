@@ -43,9 +43,8 @@ define ['core', 'exports'], (Caramal, exports) ->
 
     bind: () ->
       @unBind()
-      @client.on 'message', (data) =>
+      @client.on 'message', (info) =>
         try
-          info = JSON.parse data
           if @isEventMessage(info)
             @dispatch_process('event', info)
           else

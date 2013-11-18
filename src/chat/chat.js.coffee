@@ -40,7 +40,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
       msg.room = @room
 
-      @socket.emit('chat', JSON.stringify(msg))
+      @socket.emit('chat', msg)
 
     @create: (user, options = {}) ->
       manager = options.manager || @default_manager

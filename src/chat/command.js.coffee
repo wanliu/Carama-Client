@@ -55,7 +55,7 @@ define ['core', 'util'], (Caramal, Util) ->
       send_data = Util.merge {
                     command_id: @option.id,
                   }, data
-      @socket.emit cmd, JSON.stringify(send_data), (ret) =>
+      @socket.emit cmd, send_data, (ret) =>
         @_doAfterCallback(ret)
         callback(ret) if Util.isFunc(callback)
 

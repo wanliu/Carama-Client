@@ -134,7 +134,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * @return {[type]}     [description]
     ###
     send: (channel, msg) ->
-      @socket.emit(channel, JSON.stringify(msg))
+      @socket.emit(channel, msg)
 
     ###*
      * 执行命令
