@@ -2,8 +2,9 @@ define ['exports'], (exports) ->
 
   exports.Caramal = {}
 
-  exports.Caramal.log = (msg) ->
+  exports.Caramal.log = (args...) ->
 
-    if Caramal.debug?
-      console.log(msg)
+    if exports.Caramal.debug?
+      console.log.apply(@, args)
 
+  exports.Caramal

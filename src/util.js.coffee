@@ -18,6 +18,9 @@ define ['exports'], (exports) ->
 
     return key == undefined || obj.hasOwnProperty(key)
 
+  exports.isArray = (obj) ->
+    Object.prototype.toString.call( obj ) == '[object Array]'
+
   exports.generateId = () ->
     Math.abs(Math.random() * Math.random() * Date.now() | 0).toString() + \
     Math.abs(Math.random() * Math.random() * Date.now() | 0).toString()

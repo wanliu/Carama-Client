@@ -1,6 +1,6 @@
-define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Manager, Util, _, exports) ->
+define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, Util, Event, exports) ->
 
-  class Channel
+  class Channel extends Event
 
     ###*
      * 最大消息数
@@ -18,24 +18,6 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
       'close'
     ]
 
-    ###*
-     * 消息缓存区
-     * @type {Array}
-    ###
-    message_buffer: []
-
-    ###*
-     * 频道状态
-     * @type {[String]}
-    ###
-    state: 'open'
-
-    ###*
-     * socket.io 的 Socket 对象
-     * @type {[Socket]}
-    ###
-    socket: null
-
     @nextId = 0
 
     @hooks = {}
@@ -46,14 +28,41 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
     ###
     @default_manager = Caramal.MessageManager
 
+    @TYPES = {
+      normal: 0,
+      chat: 1,
+      group: 2
+    }
+
     constructor: (@options = {}) ->
       @id = Channel.nextId++
 
-      manager = @options.manager || @constructor.default_manager
+      ###*
+       * 消息缓存区
+       * @type {Array}
+      ###
+      @message_buffer = []
 
+      ###*
+       * 频道状态
+       * @type {[String]}
+      ###
+      @state = 'open'
+
+      manager = @options.manager || @constructor.default_manager
+      @setOptions(@options)
       @setManager(manager)
+
+      ###*
+       * socket.io 的 Socket 对象
+       * @type {[Socket]}
+      ###
       @bindSocket(@manager.client);
       @_buildCommands()
+
+    setOptions: (options) ->
+      for name, opt of options
+        @[name] = opt
 
 
     bindSocket: (@socket) ->
@@ -67,26 +76,36 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
       if @hasOwnProperty method
         throw new Error("always has #{method} property or function")
 
-      @[method] = (data = {}, options = {})  =>
-        @command(method, data, options)
+      @[method] = (args...)  =>
+
+        last = args.splice(-1)[0]
+        if Util.isFunc(last)
+          callback = last
+
+        [data, options] = args
+
+        @command(method, data, options, callback)
 
     ###*
      * 接受到消息数据的回调
      * @param  {[hash]} msg 消息数据
     ###
-    onMessage: (msg) ->
+    onMessage: (@message_callback) ->
+      @on('message', @message_callback)
 
     ###*
      * 来至服务端的命令回调
      * @param  {hash} command 命令对象
     ###
-    onCommand: (command) ->
+    onCommand: (@command_callback) ->
+      @on('command', @command_callback)
 
     ###*
      * 处发事件的回调
      * @param  {hash} event 事件对象
     ###
-    onEvent: (event) ->
+    onEvent: (@event_callback) ->
+      @on('event', @event_callback)
 
     ###*
      * 更换消息管理器，会使得这个 Channel 完全处理于别一个消息处理机制中
@@ -115,7 +134,7 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
      * @return {[type]}     [description]
     ###
     send: (channel, msg) ->
-      @socket.emit(channel, msg)
+      @socket.emit(channel, JSON.stringify(msg))
 
     ###*
      * 执行命令
@@ -123,7 +142,7 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
      * @param  {[Hash]} options 参数结构
      * @return {[type]}         [description]
     ###
-    command: (cmd, data = null, options = {}) ->
+    command: (cmd, data = null, options = {}, callback) ->
 
       return unless @commands.contain(cmd)
 
@@ -136,7 +155,7 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
       @_setupHooks(cmd, command)
 
       @manager.addReturnCommand(command) if options['return']?
-      command.execute(data)
+      command.execute(data, callback)
 
     _setupHooks: (cmd, command) ->
       hooks = @constructor.hooks
@@ -149,9 +168,9 @@ define ['core', 'chat/manager', 'util', 'underscore', 'exports'], (Caramal, Mana
           else
             ;
 
-    @create: (options) ->
+    @create: (options = {}) ->
       manager = options.manager || @default_manager
-      manager.addChannel(Channel.nextId + 1, new Channel(options))
+      manager.addChannel(Channel.nextId, new Channel(options))
 
 
     @beforeCommand: (cmd, callback) ->

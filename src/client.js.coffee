@@ -2,7 +2,9 @@ define ['socket.io', 'core'], (io, Caramal) ->
 
   class Caramal.Client
 
+
     constructor: (@url, @options) ->
+      @values = {}
       @socket = io.connect(@url, @options)
 
     on: (event, callback) ->
@@ -16,6 +18,12 @@ define ['socket.io', 'core'], (io, Caramal) ->
 
     emit: (event, data, callback) ->
       @socket.emit(event, data, callback)
+
+    set: (name, value) ->
+      @values[name] = value
+
+    get: (name) ->
+      @values[name]
 
   Caramal.connect = (url , options) ->
 

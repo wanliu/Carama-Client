@@ -7,9 +7,15 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       'join'
     ]
 
-    @beforeCommand 'open', (options) ->
+    type: Channel.TYPES['chat']
 
-      Util.merge options, { type: 1, user: @channel.user }
+    @beforeCommand 'open', (options = {}) ->
+      Util.merge options, { type: @channel.type, user: @channel.user }
+
+    @afterCommand 'open', (ret) ->
+      @channel.room = ret
+
+      # Util.merge options, { type: 1, user: @channel.user }
 
     ###*
      * 单一用户聊天
@@ -19,21 +25,37 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     constructor: (@user, @options) ->
       super(@options)
 
+    ###*
+     * 发送消息
+     * @param  {Hash} msg 消息结构
+     * @return {[type]}     [description]
+    ###
+    send: (msg) ->
+      msg = if typeof msg == 'string'
+              { msg: msg }
+            else if Util.isObject(msg)
+              msg
+            else
+              throw new Error('invalid message type')
+
+      msg.room = @room
+
+      @socket.emit('chat', JSON.stringify(msg))
+
     @create: (user, options = {}) ->
       manager = options.manager || @default_manager
-      # channel = manager.ofNamedChannel(user)
-      # if channel?
-      #   return channel
-
       manager.addNamedChannel(user, new Chat(user, options))
 
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
 
+    Caramal.log('Receive Comamnd:', info)
+
     switch info.action
       when 'join'
         if info.type == 1
-          channel = Caramal.MessageManager.ofNamedChannel(info.from)
+
+          channel = Caramal.MessageManager.roomOfChannel(info.room)
           channel = if channel? then channel else Chat.create(info.from, {room: info.room})
           channel.command('join')
         else
@@ -41,6 +63,17 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       else
         next()
 
+  Caramal.MessageManager.registerDispatch 'message', (info, next) ->
+
+    Caramal.log('Receive Message:', info)
+    channel = Caramal.MessageManager.roomOfChannel(info.room)
+    if channel?
+      channel.emit('message', info)
+
+    next()
+
+
+  Caramal.MessageManager.registerDispatch 'event', (event, next) ->
 
   exports.Chat = Chat
 

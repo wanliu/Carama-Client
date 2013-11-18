@@ -2,12 +2,13 @@ define ['core', 'exports'], (Caramal, exports) ->
 
   class Dispatchers
 
-    dispatch_queue = []
+    # dispatch_queue: []
 
     constructor: (@name) ->
+      @dispatch_queue = []
 
     attach: (dispatch) ->
-      dispatch_queue.push(dispatch)
+      @dispatch_queue.push(dispatch)
 
     process: (msg) ->
 
@@ -18,18 +19,17 @@ define ['core', 'exports'], (Caramal, exports) ->
         callback(msg, next)
         do_next
 
-      for dispatch in dispatch_queue
+      for dispatch in @dispatch_queue
         if chunk_call(dispatch)
           break
 
 
   class ClientMessageManager
 
-    message_dispatchs: {}
-    return_commands: {}
-    channels: {}
-
     constructor: (@client) ->
+      @message_dispatchs = {}
+      @return_commands = {}
+      @channels = {}
       return  unless @client?
       # throw new Error('you must initialize window.client object!') unless @client?
       @bind()
@@ -55,7 +55,7 @@ define ['core', 'exports'], (Caramal, exports) ->
           @onError(e)
 
       @client.on 'chat', (data) =>
-        @dispatch_process(name, data)
+        @dispatch_process('message', data)
 
     dispatch_process: (name, data) ->
       dispatch = @message_dispatchs[name]
@@ -100,10 +100,14 @@ define ['core', 'exports'], (Caramal, exports) ->
     ofChannel: (id) ->
       @channels[id.toString()]
 
-    ofNamedChannel: (name) ->
+    nameOfChannel: (name) ->
       @channels[name]
 
-
+    roomOfChannel: (room) ->
+      for id, chn of @channels
+        if chn.options && chn.options.room == room
+          return chn
+      null
 
 
   Caramal.MessageManager ||= new ClientMessageManager(window.client)

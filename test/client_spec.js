@@ -1,10 +1,10 @@
 define(['socket.io', 'caramal', 'chat/manager'], function(io, Caramal){
-	var url = 'http://localhost:5001',
-		options ={
-		  // transports: ['websocket'],
-		  'force new connection': true
-		},
-		client = Caramal.connect(url, options);
+	// var url = 'http://localhost:5001',
+	// 	options ={
+	// 	  // transports: ['websocket'],
+	// 	  'force new connection': true
+	// 	},
+	// 	client = Caramal.connect(url, options);
 
 
 	// Caramal.MessageManager.setClient(client);
@@ -36,18 +36,18 @@ define(['socket.io', 'caramal', 'chat/manager'], function(io, Caramal){
 
 	// });
 
-	describe("io send", function() {
-		it ("send message", function(done){
-			client = Caramal.connect(url, options);
-			// var cli = Caramal.connect(url, options);
-			Caramal.MessageManager.setClient(client);
-			client.on('connect', function(){
-				client.emit('message', JSON.stringify({action: 'join', room: 'test'}));
-				setTimeout(function(){
-					done()}, 1000);
-			})
+	// describe("io send", function() {
+	// 	it ("send message", function(done){
+	// 		client = Caramal.connect(url, options);
+	// 		// var cli = Caramal.connect(url, options);
+	// 		Caramal.MessageManager.setClient(client);
+	// 		client.on('connect', function(){
+	// 			client.emit('message', JSON.stringify({action: 'join', room: 'test'}));
+	// 			setTimeout(function(){
+	// 				done()}, 1000);
+	// 		})
 
-		});
-	});
+	// 	});
+	// });
 
 })

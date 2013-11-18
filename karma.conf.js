@@ -12,7 +12,7 @@ module.exports = function(config) {
     frameworks: [
       'requirejs',
       'mocha',
-      'jasmine'],
+      'chai'],
 
 
     files: [
