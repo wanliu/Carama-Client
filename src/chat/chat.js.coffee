@@ -42,19 +42,32 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
       @socket.emit('chat', JSON.stringify(msg))
 
+    ###*
+     * 暂时离开的通知
+    ###
+    afk: () ->
+      @socket.emit('afk', JSON.stringify({
+        room: @room }))
+
+    ###*
+     * 正在输入的功能
+    ###
+    being_input: () ->
+      @socket.emit('inputing', JSON.stringify({
+        room: @room }))
+
     @create: (user, options = {}) ->
       manager = options.manager || @default_manager
       manager.addNamedChannel(user, new Chat(user, options))
 
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
-
-    Caramal.log('Receive Comamnd:', info)
+    if info.type == Channel.TYPES['chat']
+      Caramal.log('Receive Comamnd:', info)
 
     switch info.action
       when 'join'
-        if info.type == 1
-
+        if info.type == Channel.TYPES['chat']
           channel = Caramal.MessageManager.roomOfChannel(info.room)
           channel = if channel? then channel else Chat.create(info.from, {room: info.room})
           channel.command('join')
@@ -69,11 +82,20 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     channel = Caramal.MessageManager.roomOfChannel(info.room)
     if channel?
       channel.emit('message', info)
-
-    next()
+    else
+      next()
 
 
   Caramal.MessageManager.registerDispatch 'event', (event, next) ->
+
+    Caramal.log('Receive Event:', event)
+
+    channel = Caramal.MessageManager.roomOfChannel(event.room)
+    if channel?
+      channel.emit('event', event)
+    else
+      next()
+
 
   exports.Chat = Chat
 

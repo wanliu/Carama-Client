@@ -61,6 +61,28 @@
         return this.socket.emit('chat', JSON.stringify(msg));
       };
 
+      /**
+       * 暂时离开的通知
+      */
+
+
+      Chat.prototype.afk = function() {
+        return this.socket.emit('afk', JSON.stringify({
+          room: this.room
+        }));
+      };
+
+      /**
+       * 正在输入的功能
+      */
+
+
+      Chat.prototype.being_input = function() {
+        return this.socket.emit('inputing', JSON.stringify({
+          room: this.room
+        }));
+      };
+
       Chat.create = function(user, options) {
         var manager;
         if (options == null) {
@@ -75,10 +97,12 @@
     })(Channel);
     Caramal.MessageManager.registerDispatch('command', function(info, next) {
       var channel;
-      Caramal.log('Receive Comamnd:', info);
+      if (info.type === Channel.TYPES['chat']) {
+        Caramal.log('Receive Comamnd:', info);
+      }
       switch (info.action) {
         case 'join':
-          if (info.type === 1) {
+          if (info.type === Channel.TYPES['chat']) {
             channel = Caramal.MessageManager.roomOfChannel(info.room);
             channel = channel != null ? channel : Chat.create(info.from, {
               room: info.room
@@ -97,11 +121,21 @@
       Caramal.log('Receive Message:', info);
       channel = Caramal.MessageManager.roomOfChannel(info.room);
       if (channel != null) {
-        channel.emit('message', info);
+        return channel.emit('message', info);
+      } else {
+        return next();
       }
-      return next();
     });
-    Caramal.MessageManager.registerDispatch('event', function(event, next) {});
+    Caramal.MessageManager.registerDispatch('event', function(event, next) {
+      var channel;
+      Caramal.log('Receive Event:', event);
+      channel = Caramal.MessageManager.roomOfChannel(event.room);
+      if (channel != null) {
+        return channel.emit('event', event);
+      } else {
+        return next();
+      }
+    });
     return exports.Chat = Chat;
   });
 

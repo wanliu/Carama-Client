@@ -20,7 +20,7 @@ define ['core', 'exports'], (Caramal, exports) ->
         do_next
 
       for dispatch in @dispatch_queue
-        if chunk_call(dispatch)
+        unless chunk_call(dispatch)
           break
 
 

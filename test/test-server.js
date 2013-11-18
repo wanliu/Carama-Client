@@ -55,6 +55,13 @@ io.on('connection', function (socket) {
         callback(room);
         break;
       case 2:
+        room = generateId();
+        io.sockets.emit('message', JSON.stringify({
+          action: 'join',
+          room: room,
+          group: info.group,
+          type: info.type }))
+        callback(room);
         break;
       }
     } catch (e) {
@@ -65,8 +72,8 @@ io.on('connection', function (socket) {
 
   socket.on('remote', function(data, callback){
     try {
-      var info = JSON.parse(data)
-        action = info['action'];
+      var info = JSON.parse(data);
+      console.log('remote:', info);
       socket.emit('message', JSON.stringify(info));
     } catch (e) {
       console.log(e.message)
@@ -97,6 +104,26 @@ io.on('connection', function (socket) {
       console.log(e.message)
     }
   })
+
+  socket.on('being_input', function(data){
+    try {
+      var info = JSON.parse(data);
+
+      var room = info.room,
+        info = {
+            user: current_user,
+            action: 'notice',
+            room: room,
+            type: 3
+        };
+      console.log('still inputing');
+
+      socket.broadcast.to(info.room).emit('message', JSON.stringify(info));
+    } catch (e) {
+      console.log(e.message)
+    }
+
+  });
 
   socket.on('disconnect', function(){
     console.log('disconnect:', socket.id);

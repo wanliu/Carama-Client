@@ -26,7 +26,7 @@
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           dispatch = _ref[_i];
-          if (chunk_call(dispatch)) {
+          if (!chunk_call(dispatch)) {
             break;
           } else {
             _results.push(void 0);
