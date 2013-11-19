@@ -113,6 +113,32 @@
 ### 使用
 
 ```js
+  Caramal.MessageManager.setClient(clients.client)
+  
   chat = Caramal.Chat.create('hysios');
+  
+  // 绑定消息显示
+  chat.onMessage(function(msg) {
+     console.log(msg);
+  })
+  
+  // 绑定错误处理
+  
+  chat.onError(function(error) {
+     console.log(error);
+  });
+  
+  // 打开频道
+  chat.open()
+  
+  // 输出 room id 
+  chat.room
+  
+  // 发送消息
+  
+  chat.send('hi')
+  
+  // 你会看到这样一个信息输出在控制台
+  // => Object {msg: "hi", user: "hyysios", action: "chat"} 
 ```
 
