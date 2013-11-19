@@ -1,5 +1,4 @@
 requirejs.config({
-
     baseUrl: "./src",
 
     //Set paths for modules. If relative paths, set relative to baseUrl above.
@@ -14,10 +13,21 @@ requirejs.config({
         'underscore' : 'vendor/underscore'
     },
 
+    optimize: 'none',
+    // wrap: true,
+
     shim: {
         'underscore' : {
             exports: '_'
+        },
+        'socket.io': {
+            exports: 'io'
         }
+    },
+
+    wrap: {
+        startFile: 'src/start.frag',
+        endFile: 'src/end.frag'
     }
 
 })

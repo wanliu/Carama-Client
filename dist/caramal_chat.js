@@ -1,3 +1,446 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        //Allow using this built library as an AMD module
+        //in another project. That other project will only
+        //see this AMD call, not the internal modules in
+        //the closure below.
+        define(factory);
+    } else {
+        //Browser globals case. Just assign the
+        //result to a property on the global.
+        root.Caramal = factory();
+    }
+}(this, function () {
+/**
+ * almond 0.2.7 Copyright (c) 2011-2012, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/jrburke/almond for details
+ */
+//Going sloppy to avoid 'use strict' string cost, but strict practices should
+//be followed.
+/*jslint sloppy: true */
+/*global setTimeout: false */
+
+var requirejs, require, define;
+(function (undef) {
+    var main, req, makeMap, handlers,
+        defined = {},
+        waiting = {},
+        config = {},
+        defining = {},
+        hasOwn = Object.prototype.hasOwnProperty,
+        aps = [].slice;
+
+    function hasProp(obj, prop) {
+        return hasOwn.call(obj, prop);
+    }
+
+    /**
+     * Given a relative module name, like ./something, normalize it to
+     * a real name that can be mapped to a path.
+     * @param {String} name the relative name
+     * @param {String} baseName a real name that the name arg is relative
+     * to.
+     * @returns {String} normalized name
+     */
+    function normalize(name, baseName) {
+        var nameParts, nameSegment, mapValue, foundMap,
+            foundI, foundStarMap, starI, i, j, part,
+            baseParts = baseName && baseName.split("/"),
+            map = config.map,
+            starMap = (map && map['*']) || {};
+
+        //Adjust any relative paths.
+        if (name && name.charAt(0) === ".") {
+            //If have a base name, try to normalize against it,
+            //otherwise, assume it is a top-level require that will
+            //be relative to baseUrl in the end.
+            if (baseName) {
+                //Convert baseName to array, and lop off the last part,
+                //so that . matches that "directory" and not name of the baseName's
+                //module. For instance, baseName of "one/two/three", maps to
+                //"one/two/three.js", but we want the directory, "one/two" for
+                //this normalization.
+                baseParts = baseParts.slice(0, baseParts.length - 1);
+
+                name = baseParts.concat(name.split("/"));
+
+                //start trimDots
+                for (i = 0; i < name.length; i += 1) {
+                    part = name[i];
+                    if (part === ".") {
+                        name.splice(i, 1);
+                        i -= 1;
+                    } else if (part === "..") {
+                        if (i === 1 && (name[2] === '..' || name[0] === '..')) {
+                            //End of the line. Keep at least one non-dot
+                            //path segment at the front so it can be mapped
+                            //correctly to disk. Otherwise, there is likely
+                            //no path mapping for a path starting with '..'.
+                            //This can still fail, but catches the most reasonable
+                            //uses of ..
+                            break;
+                        } else if (i > 0) {
+                            name.splice(i - 1, 2);
+                            i -= 2;
+                        }
+                    }
+                }
+                //end trimDots
+
+                name = name.join("/");
+            } else if (name.indexOf('./') === 0) {
+                // No baseName, so this is ID is resolved relative
+                // to baseUrl, pull off the leading dot.
+                name = name.substring(2);
+            }
+        }
+
+        //Apply map config if available.
+        if ((baseParts || starMap) && map) {
+            nameParts = name.split('/');
+
+            for (i = nameParts.length; i > 0; i -= 1) {
+                nameSegment = nameParts.slice(0, i).join("/");
+
+                if (baseParts) {
+                    //Find the longest baseName segment match in the config.
+                    //So, do joins on the biggest to smallest lengths of baseParts.
+                    for (j = baseParts.length; j > 0; j -= 1) {
+                        mapValue = map[baseParts.slice(0, j).join('/')];
+
+                        //baseName segment has  config, find if it has one for
+                        //this name.
+                        if (mapValue) {
+                            mapValue = mapValue[nameSegment];
+                            if (mapValue) {
+                                //Match, update name to the new value.
+                                foundMap = mapValue;
+                                foundI = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (foundMap) {
+                    break;
+                }
+
+                //Check for a star map match, but just hold on to it,
+                //if there is a shorter segment match later in a matching
+                //config, then favor over this star map.
+                if (!foundStarMap && starMap && starMap[nameSegment]) {
+                    foundStarMap = starMap[nameSegment];
+                    starI = i;
+                }
+            }
+
+            if (!foundMap && foundStarMap) {
+                foundMap = foundStarMap;
+                foundI = starI;
+            }
+
+            if (foundMap) {
+                nameParts.splice(0, foundI, foundMap);
+                name = nameParts.join('/');
+            }
+        }
+
+        return name;
+    }
+
+    function makeRequire(relName, forceSync) {
+        return function () {
+            //A version of a require function that passes a moduleName
+            //value for items that may need to
+            //look up paths relative to the moduleName
+            return req.apply(undef, aps.call(arguments, 0).concat([relName, forceSync]));
+        };
+    }
+
+    function makeNormalize(relName) {
+        return function (name) {
+            return normalize(name, relName);
+        };
+    }
+
+    function makeLoad(depName) {
+        return function (value) {
+            defined[depName] = value;
+        };
+    }
+
+    function callDep(name) {
+        if (hasProp(waiting, name)) {
+            var args = waiting[name];
+            delete waiting[name];
+            defining[name] = true;
+            main.apply(undef, args);
+        }
+
+        if (!hasProp(defined, name) && !hasProp(defining, name)) {
+            throw new Error('No ' + name);
+        }
+        return defined[name];
+    }
+
+    //Turns a plugin!resource to [plugin, resource]
+    //with the plugin being undefined if the name
+    //did not have a plugin prefix.
+    function splitPrefix(name) {
+        var prefix,
+            index = name ? name.indexOf('!') : -1;
+        if (index > -1) {
+            prefix = name.substring(0, index);
+            name = name.substring(index + 1, name.length);
+        }
+        return [prefix, name];
+    }
+
+    /**
+     * Makes a name map, normalizing the name, and using a plugin
+     * for normalization if necessary. Grabs a ref to plugin
+     * too, as an optimization.
+     */
+    makeMap = function (name, relName) {
+        var plugin,
+            parts = splitPrefix(name),
+            prefix = parts[0];
+
+        name = parts[1];
+
+        if (prefix) {
+            prefix = normalize(prefix, relName);
+            plugin = callDep(prefix);
+        }
+
+        //Normalize according
+        if (prefix) {
+            if (plugin && plugin.normalize) {
+                name = plugin.normalize(name, makeNormalize(relName));
+            } else {
+                name = normalize(name, relName);
+            }
+        } else {
+            name = normalize(name, relName);
+            parts = splitPrefix(name);
+            prefix = parts[0];
+            name = parts[1];
+            if (prefix) {
+                plugin = callDep(prefix);
+            }
+        }
+
+        //Using ridiculous property names for space reasons
+        return {
+            f: prefix ? prefix + '!' + name : name, //fullName
+            n: name,
+            pr: prefix,
+            p: plugin
+        };
+    };
+
+    function makeConfig(name) {
+        return function () {
+            return (config && config.config && config.config[name]) || {};
+        };
+    }
+
+    handlers = {
+        require: function (name) {
+            return makeRequire(name);
+        },
+        exports: function (name) {
+            var e = defined[name];
+            if (typeof e !== 'undefined') {
+                return e;
+            } else {
+                return (defined[name] = {});
+            }
+        },
+        module: function (name) {
+            return {
+                id: name,
+                uri: '',
+                exports: defined[name],
+                config: makeConfig(name)
+            };
+        }
+    };
+
+    main = function (name, deps, callback, relName) {
+        var cjsModule, depName, ret, map, i,
+            args = [],
+            callbackType = typeof callback,
+            usingExports;
+
+        //Use name if no relName
+        relName = relName || name;
+
+        //Call the callback to define the module, if necessary.
+        if (callbackType === 'undefined' || callbackType === 'function') {
+            //Pull out the defined dependencies and pass the ordered
+            //values to the callback.
+            //Default to [require, exports, module] if no deps
+            deps = !deps.length && callback.length ? ['require', 'exports', 'module'] : deps;
+            for (i = 0; i < deps.length; i += 1) {
+                map = makeMap(deps[i], relName);
+                depName = map.f;
+
+                //Fast path CommonJS standard dependencies.
+                if (depName === "require") {
+                    args[i] = handlers.require(name);
+                } else if (depName === "exports") {
+                    //CommonJS module spec 1.1
+                    args[i] = handlers.exports(name);
+                    usingExports = true;
+                } else if (depName === "module") {
+                    //CommonJS module spec 1.1
+                    cjsModule = args[i] = handlers.module(name);
+                } else if (hasProp(defined, depName) ||
+                           hasProp(waiting, depName) ||
+                           hasProp(defining, depName)) {
+                    args[i] = callDep(depName);
+                } else if (map.p) {
+                    map.p.load(map.n, makeRequire(relName, true), makeLoad(depName), {});
+                    args[i] = defined[depName];
+                } else {
+                    throw new Error(name + ' missing ' + depName);
+                }
+            }
+
+            ret = callback ? callback.apply(defined[name], args) : undefined;
+
+            if (name) {
+                //If setting exports via "module" is in play,
+                //favor that over return value and exports. After that,
+                //favor a non-undefined return value over exports use.
+                if (cjsModule && cjsModule.exports !== undef &&
+                        cjsModule.exports !== defined[name]) {
+                    defined[name] = cjsModule.exports;
+                } else if (ret !== undef || !usingExports) {
+                    //Use the return value from the function.
+                    defined[name] = ret;
+                }
+            }
+        } else if (name) {
+            //May just be an object definition for the module. Only
+            //worry about defining if have a module name.
+            defined[name] = callback;
+        }
+    };
+
+    requirejs = require = req = function (deps, callback, relName, forceSync, alt) {
+        if (typeof deps === "string") {
+            if (handlers[deps]) {
+                //callback in this case is really relName
+                return handlers[deps](callback);
+            }
+            //Just return the module wanted. In this scenario, the
+            //deps arg is the module name, and second arg (if passed)
+            //is just the relName.
+            //Normalize module name, if it contains . or ..
+            return callDep(makeMap(deps, callback).f);
+        } else if (!deps.splice) {
+            //deps is a config object, not an array.
+            config = deps;
+            if (callback.splice) {
+                //callback is an array, which means it is a dependency list.
+                //Adjust args if there are dependencies
+                deps = callback;
+                callback = relName;
+                relName = null;
+            } else {
+                deps = undef;
+            }
+        }
+
+        //Support require(['a'])
+        callback = callback || function () {};
+
+        //If relName is a function, it is an errback handler,
+        //so remove it.
+        if (typeof relName === 'function') {
+            relName = forceSync;
+            forceSync = alt;
+        }
+
+        //Simulate async callback;
+        if (forceSync) {
+            main(undef, deps, callback, relName);
+        } else {
+            //Using a non-zero value because of concern for what old browsers
+            //do, and latest browsers "upgrade" to 4 if lower value is used:
+            //http://www.whatwg.org/specs/web-apps/current-work/multipage/timers.html#dom-windowtimers-settimeout:
+            //If want a value immediately, use require('id') instead -- something
+            //that works in almond on the global level, but not guaranteed and
+            //unlikely to work in other AMD implementations.
+            setTimeout(function () {
+                main(undef, deps, callback, relName);
+            }, 4);
+        }
+
+        return req;
+    };
+
+    /**
+     * Just drops the config on the floor, but returns req in case
+     * the config return value is used.
+     */
+    req.config = function (cfg) {
+        config = cfg;
+        if (config.deps) {
+            req(config.deps, config.callback);
+        }
+        return req;
+    };
+
+    /**
+     * Expose module registry for debugging and tooling
+     */
+    requirejs._defined = defined;
+
+    define = function (name, deps, callback) {
+
+        //This module may not have dependencies
+        if (!deps.splice) {
+            //deps is not an array, so probably means
+            //an object literal or factory function for
+            //the value. Adjust args.
+            callback = deps;
+            deps = [];
+        }
+
+        if (!hasProp(defined, name) && !hasProp(waiting, name)) {
+            waiting[name] = [name, deps, callback];
+        }
+    };
+
+    define.amd = {
+        jQuery: true
+    };
+}());
+
+define("almond", function(){});
+
+(function() {
+  var __slice = [].slice;
+
+  define('core',['exports'], function(exports) {
+    exports.Caramal = {};
+    exports.Caramal.log = function() {
+      var args;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (exports.Caramal.debug != null) {
+        return console.log.apply(this, args);
+      }
+    };
+    return exports.Caramal;
+  });
+
+}).call(this);
+
 /*! Socket.IO.js build:0.9.16, development. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */
 
 var io = ('undefined' === typeof module ? {} : module.exports);
@@ -660,7 +1103,7 @@ var io = ('undefined' === typeof module ? {} : module.exports);
  */
 
 (function (exports, nativeJSON) {
-  "use strict";
+  
 
   // use native JSON if it's available
   if (nativeJSON && nativeJSON.parse){
@@ -3868,6 +4311,1049 @@ var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="Sho
 );
 
 if (typeof define === "function" && define.amd) {
-  define([], function () { return io; });
+  define('socket.io',[], function () { return io; });
 }
 })();
+(function() {
+  define('client',['socket.io', 'core'], function(io, Caramal) {
+    Caramal.Client = (function() {
+      function Client(url, options) {
+        this.url = url;
+        this.options = options;
+        this.values = {};
+        this.socket = io.connect(this.url, this.options);
+      }
+
+      Client.prototype.on = function(event, callback) {
+        return this.socket.on(event, callback);
+      };
+
+      Client.prototype.subscribe = function(channel, callback) {
+        return this.on(channel, callback);
+      };
+
+      Client.prototype.unsubscribe = function(channel, callback) {
+        return this.socket.removeListener(channel);
+      };
+
+      Client.prototype.emit = function(event, data, callback) {
+        return this.socket.emit(event, data, callback);
+      };
+
+      Client.prototype.set = function(name, value) {
+        return this.values[name] = value;
+      };
+
+      Client.prototype.get = function(name) {
+        return this.values[name];
+      };
+
+      return Client;
+
+    })();
+    return Caramal.connect = function(url, options) {
+      return new Caramal.Client(url, options);
+    };
+  });
+
+}).call(this);
+
+(function() {
+  define('caramal',['exports', 'core', 'client'], function(exports, Caramal) {
+    return exports.Caramal = Caramal;
+  });
+
+}).call(this);
+
+(function() {
+  define('util',['exports'], function(exports) {
+    exports.isFunc = function(object) {
+      return typeof object === 'function';
+    };
+    exports.isObject = function(obj) {
+      var key, _i, _len;
+      if (!obj || obj.toString() !== "[object Object]" || obj.nodeType || obj.setInterval) {
+        return false;
+      }
+      if (obj.constructor && !obj.hasOwnProperty("constructor") && !obj.constructor.prototype.hasOwnProperty("isPrototypeOf")) {
+        return false;
+      }
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        key = obj[_i];      }
+      return key === void 0 || obj.hasOwnProperty(key);
+    };
+    exports.isArray = function(obj) {
+      return Object.prototype.toString.call(obj) === '[object Array]';
+    };
+    exports.generateId = function() {
+      return Math.abs(Math.random() * Math.random() * Date.now() | 0).toString() + Math.abs(Math.random() * Math.random() * Date.now() | 0).toString();
+    };
+    exports.merge = function(target, other) {
+      var k, value;
+      for (k in other) {
+        value = other[k];
+        if (exports.isObject(value)) {
+          target[v] = {};
+          target[v] = exports.merge(target[v], value);
+        } else {
+          target[k] = value;
+        }
+      }
+      return target;
+    };
+    exports.classify = function(klass_string) {};
+    String.prototype.toTitleCase = function() {
+      return this.replace(/\w\S*/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      });
+    };
+    Array.prototype.contain = function(member) {
+      var e, _i, _len;
+      for (_i = 0, _len = this.length; _i < _len; _i++) {
+        e = this[_i];
+        if (e === member) {
+          return true;
+        }
+      }
+      return false;
+    };
+    return exports;
+  });
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  define('chat/command',['core', 'util'], function(Caramal, Util) {
+    var CloseCommand, Command, CommandOption, JoinCommand, OpenCommand, _ref, _ref1, _ref2;
+    CommandOption = (function() {
+      CommandOption.prototype.default_options = {
+        maximum_reply: 0,
+        alive_timeout: 5000,
+        default_action: null,
+        repeat_reply: false
+      };
+
+      function CommandOption(options) {
+        var _base;
+        this.options = options;
+        if (!Util.isObject(this.options)) {
+          this.options = {};
+        }
+        (_base = this.options)['id'] || (_base['id'] = Util.generateId());
+        Util.merge(this.options, this.default_options);
+        this.methodlizm(this.options);
+      }
+
+      CommandOption.prototype.methodlizm = function(hash) {
+        var k, v, _results;
+        _results = [];
+        for (k in hash) {
+          v = hash[k];
+          _results.push(this[k] = v);
+        }
+        return _results;
+      };
+
+      return CommandOption;
+
+    })();
+    Command = (function() {
+      function Command(channel, name, options) {
+        this.channel = channel;
+        this.name = name;
+        this.options = options != null ? options : {};
+        this.socket = this.channel.socket;
+        this.option = new CommandOption(this.options);
+      }
+
+      Command.prototype.execute = function(data, callback) {
+        data = this._doBeforeCallback(data);
+        return this.doExecute(data, callback);
+      };
+
+      Command.prototype.doExecute = function(data, callback) {};
+
+      Command.prototype.beforeExecute = function(before_callback) {
+        this.before_callback = before_callback;
+      };
+
+      Command.prototype.afterExecute = function(after_callback) {
+        this.after_callback = after_callback;
+      };
+
+      Command.prototype.onReturnExecute = function(return_callback) {
+        this.return_callback = return_callback;
+      };
+
+      Command.prototype._doBeforeCallback = function(data) {
+        if (Util.isFunc(this.before_callback)) {
+          return this.before_callback(data);
+        }
+      };
+
+      Command.prototype._doAfterCallback = function(data) {
+        if (Util.isFunc(this.after_callback)) {
+          return this.after_callback(data);
+        }
+      };
+
+      Command.prototype._doReturnCallback = function(data) {
+        if (Util.isFunc(this.return_callback)) {
+          return this.return_callback(data);
+        }
+      };
+
+      Command.prototype.sendCommand = function(cmd, data, callback) {
+        var send_data,
+          _this = this;
+        if (data == null) {
+          data = {};
+        }
+        send_data = Util.merge({
+          command_id: this.option.id
+        }, data);
+        return this.socket.emit(cmd, JSON.stringify(send_data), function(ret) {
+          _this._doAfterCallback(ret);
+          if (Util.isFunc(callback)) {
+            return callback(ret);
+          }
+        });
+      };
+
+      return Command;
+
+    })();
+    OpenCommand = (function(_super) {
+      __extends(OpenCommand, _super);
+
+      function OpenCommand() {
+        _ref = OpenCommand.__super__.constructor.apply(this, arguments);
+        return _ref;
+      }
+
+      OpenCommand.prototype.doExecute = function(data, callback) {
+        if (data == null) {
+          data = {};
+        }
+        return this.sendCommand('open', data, callback);
+      };
+
+      return OpenCommand;
+
+    })(Command);
+    JoinCommand = (function(_super) {
+      __extends(JoinCommand, _super);
+
+      function JoinCommand() {
+        _ref1 = JoinCommand.__super__.constructor.apply(this, arguments);
+        return _ref1;
+      }
+
+      JoinCommand.prototype.doExecute = function(data, callback) {
+        if (callback == null) {
+          callback = null;
+        }
+        if (data == null) {
+          data = {
+            room: this.channel.options.room
+          };
+        }
+        return this.sendCommand('join', data, callback);
+      };
+
+      return JoinCommand;
+
+    })(Command);
+    CloseCommand = (function(_super) {
+      __extends(CloseCommand, _super);
+
+      function CloseCommand() {
+        _ref2 = CloseCommand.__super__.constructor.apply(this, arguments);
+        return _ref2;
+      }
+
+      CloseCommand.prototype.doExecute = function(data, callback) {
+        if (callback == null) {
+          callback = null;
+        }
+        return this.sendCommand('leave', data, callback);
+      };
+
+      return CloseCommand;
+
+    })(Command);
+    Caramal.Command = Command;
+    Caramal.OpenCommand = OpenCommand;
+    Caramal.JoinCommand = JoinCommand;
+    return Caramal.CloseCommand = CloseCommand;
+  });
+
+}).call(this);
+
+(function() {
+  define('chat/manager',['core', 'exports'], function(Caramal, exports) {
+    var ClientMessageManager, Dispatchers;
+    Dispatchers = (function() {
+      function Dispatchers(name) {
+        this.name = name;
+        this.dispatch_queue = [];
+      }
+
+      Dispatchers.prototype.attach = function(dispatch) {
+        return this.dispatch_queue.push(dispatch);
+      };
+
+      Dispatchers.prototype.process = function(msg) {
+        var chunk_call, dispatch, _i, _len, _ref, _results;
+        chunk_call = function(callback) {
+          var do_next, next;
+          do_next = false;
+          next = function() {
+            return do_next = true;
+          };
+          callback(msg, next);
+          return do_next;
+        };
+        _ref = this.dispatch_queue;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          dispatch = _ref[_i];
+          if (!chunk_call(dispatch)) {
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      return Dispatchers;
+
+    })();
+    ClientMessageManager = (function() {
+      function ClientMessageManager(client) {
+        this.client = client;
+        this.message_dispatchs = {};
+        this.return_commands = {};
+        this.channels = {};
+        if (this.client == null) {
+          return;
+        }
+        this.bind();
+      }
+
+      ClientMessageManager.prototype.addReturnCommand = function(command) {
+        if (!(command.option && (command.option.id != null))) {
+          throw new Error('return command must have id property');
+        }
+        return this.return_commands[command.option.id] = command;
+      };
+
+      ClientMessageManager.prototype.bind = function() {
+        var _this = this;
+        this.unBind();
+        this.client.on('message', function(data) {
+          var e, info;
+          try {
+            info = JSON.parse(data);
+            if (_this.isEventMessage(info)) {
+              return _this.dispatch_process('event', info);
+            } else {
+              return _this.dispatch_process('command', info);
+            }
+          } catch (_error) {
+            e = _error;
+            return _this.onError(e);
+          }
+        });
+        return this.client.on('chat', function(data) {
+          return _this.dispatch_process('message', data);
+        });
+      };
+
+      ClientMessageManager.prototype.dispatch_process = function(name, data) {
+        var dispatch, e, info;
+        dispatch = this.message_dispatchs[name];
+        if (dispatch != null) {
+          try {
+            info = (function() {
+              if (typeof data === 'string') {
+                return JSON.parse(data);
+              } else if (typeof data === 'object') {
+                return data;
+              } else {
+                throw new Error('invalid data type');
+              }
+            })();
+            return dispatch.process(info);
+          } catch (_error) {
+            e = _error;
+            return this.onError(e);
+          }
+        }
+      };
+
+      ClientMessageManager.prototype.isEventMessage = function(info) {
+        return info.action === 'notice';
+      };
+
+      ClientMessageManager.prototype.unBind = function() {
+        if (this.client != null) {
+          this.client.unsubscribe('message');
+          return this.client.unsubscribe('chat');
+        }
+      };
+
+      ClientMessageManager.prototype.setClient = function(client) {
+        this.client = client;
+        return this.bind();
+      };
+
+      ClientMessageManager.prototype.registerDispatch = function(message, dispatcher) {
+        var dispatchers, _base;
+        dispatchers = (_base = this.message_dispatchs)[message] || (_base[message] = new Dispatchers(message));
+        return dispatchers.attach(dispatcher);
+      };
+
+      ClientMessageManager.prototype.onError = function(e) {
+        return console.log(e);
+      };
+
+      ClientMessageManager.prototype.addChannel = function(id, channel) {
+        return this.channels[id.toString()] = channel;
+      };
+
+      ClientMessageManager.prototype.addNamedChannel = function(name, channel) {
+        return this.channels[name] = channel;
+      };
+
+      ClientMessageManager.prototype.ofChannel = function(id) {
+        return this.channels[id.toString()];
+      };
+
+      ClientMessageManager.prototype.nameOfChannel = function(name) {
+        return this.channels[name];
+      };
+
+      ClientMessageManager.prototype.roomOfChannel = function(room) {
+        var chn, id, _ref;
+        _ref = this.channels;
+        for (id in _ref) {
+          chn = _ref[id];
+          if (chn.options && chn.options.room === room) {
+            return chn;
+          }
+        }
+        return null;
+      };
+
+      return ClientMessageManager;
+
+    })();
+    Caramal.MessageManager || (Caramal.MessageManager = new ClientMessageManager(window.client));
+    return exports.ClientMessageManager = ClientMessageManager;
+  });
+
+}).call(this);
+
+(function() {
+  define('event',['util'], function(Util) {
+    var Event;
+    return Event = (function() {
+      function Event() {}
+
+      Event.prototype._listeners = {};
+
+      Event.prototype.addEventListener = function(event, callback) {
+        var callbacks;
+        if ((callbacks = this._listeners[event]) == null) {
+          callbacks = this._listeners[event] = [];
+        }
+        if (Util.isArray(callbacks)) {
+          return callbacks.push(callback);
+        }
+      };
+
+      Event.prototype.removeEventListener = function(event, callback) {
+        var callbacks, cb, i, _i, _len;
+        callbacks = this._listeners[event];
+        if ((callbacks != null) && Util.isArray(callbacks)) {
+          for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
+            cb = callbacks[i];
+            if (Util.isFunc(cb) && callback === cb) {
+              return callbacks.splice(i, 1)[0];
+            }
+          }
+        }
+      };
+
+      Event.prototype.once = function(event, callback) {
+        var cb, i, _i, _len;
+        if ((typeof callbacks !== "undefined" && callbacks !== null) && Util.isArray(callbacks)) {
+          for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
+            cb = callbacks[i];
+            if (Util.isFunc(cb) && callback === cb) {
+              return;
+            }
+          }
+          return this.on(event, callback);
+        }
+      };
+
+      Event.prototype.on = function(event, callback) {
+        return this.addEventListener(event, callback);
+      };
+
+      Event.prototype.emit = function(event, data) {
+        var callback, callbacks, _i, _len, _results;
+        callbacks = this._listeners[event] || [];
+        _results = [];
+        for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
+          callback = callbacks[_i];
+          if (Util.isFunc(callback)) {
+            _results.push(callback(data));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      Event.prototype.send = function(event, data) {};
+
+      return Event;
+
+    })();
+  });
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
+
+  define('chat/channel',['core', 'chat/manager', 'util', 'event', 'exports'], function(Caramal, Manager, Util, Event, exports) {
+    var Channel;
+    Channel = (function(_super) {
+      var MAXIMUM_MESSAGES;
+
+      __extends(Channel, _super);
+
+      /**
+       * 最大消息数
+       * @type {Number}
+      */
+
+
+      MAXIMUM_MESSAGES = 2000;
+
+      /**
+       * 有效命令列表
+       * @type {Array}
+      */
+
+
+      Channel.prototype.commands = ['open', 'join', 'close'];
+
+      Channel.nextId = 0;
+
+      Channel.hooks = {};
+
+      /**
+       * 管理器对象
+       * @type {[type]}
+      */
+
+
+      Channel.default_manager = Caramal.MessageManager;
+
+      Channel.TYPES = {
+        normal: 0,
+        chat: 1,
+        group: 2
+      };
+
+      function Channel(options) {
+        var manager;
+        this.options = options != null ? options : {};
+        this.id = Channel.nextId++;
+        /**
+         * 消息缓存区
+         * @type {Array}
+        */
+
+        this.message_buffer = [];
+        /**
+         * 频道状态
+         * @type {[String]}
+        */
+
+        this.state = 'open';
+        manager = this.options.manager || this.constructor.default_manager;
+        this.setOptions(this.options);
+        this.setManager(manager);
+        /**
+         * socket.io 的 Socket 对象
+         * @type {[Socket]}
+        */
+
+        this.bindSocket(this.manager.client);
+        this._buildCommands();
+      }
+
+      Channel.prototype.setOptions = function(options) {
+        var name, opt, _results;
+        _results = [];
+        for (name in options) {
+          opt = options[name];
+          _results.push(this[name] = opt);
+        }
+        return _results;
+      };
+
+      Channel.prototype.bindSocket = function(socket) {
+        this.socket = socket;
+      };
+
+      Channel.prototype._buildCommands = function() {
+        var cmd, _i, _len, _ref, _results;
+        _ref = this.commands;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          cmd = _ref[_i];
+          _results.push(this.exposeCommand(cmd));
+        }
+        return _results;
+      };
+
+      Channel.prototype.exposeCommand = function(method) {
+        var _this = this;
+        if (this.hasOwnProperty(method)) {
+          throw new Error("always has " + method + " property or function");
+        }
+        return this[method] = function() {
+          var args, callback, data, last, options;
+          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+          last = args.splice(-1)[0];
+          if (Util.isFunc(last)) {
+            callback = last;
+          }
+          data = args[0], options = args[1];
+          return _this.command(method, data, options, callback);
+        };
+      };
+
+      /**
+       * 接受到消息数据的回调
+       * @param  {[hash]} msg 消息数据
+      */
+
+
+      Channel.prototype.onMessage = function(message_callback) {
+        this.message_callback = message_callback;
+        return this.on('message', this.message_callback);
+      };
+
+      /**
+       * 来至服务端的命令回调
+       * @param  {hash} command 命令对象
+      */
+
+
+      Channel.prototype.onCommand = function(command_callback) {
+        this.command_callback = command_callback;
+        return this.on('command', this.command_callback);
+      };
+
+      /**
+       * 处发事件的回调
+       * @param  {hash} event 事件对象
+      */
+
+
+      Channel.prototype.onEvent = function(event_callback) {
+        this.event_callback = event_callback;
+        return this.on('event', this.event_callback);
+      };
+
+      /**
+       * 更换消息管理器，会使得这个 Channel 完全处理于别一个消息处理机制中
+       * @param {MessageManager} @manager 消息管理器对象
+      */
+
+
+      Channel.prototype.setManager = function(manager) {
+        this.manager = manager;
+      };
+
+      /**
+       * 激活频道，为了处理用户空闲，离开与消息通知等功能， 在用户进入输入时，实际上会自动调用
+       * @return {[type]} [description]
+      */
+
+
+      Channel.prototype.active = function() {};
+
+      /**
+       * 反激活频道，使频道进入无人状态，消息会到来，会由 OnMessage 处发变成 OnDeactiveMessage 处发
+       * @return {[type]} [description]
+      */
+
+
+      Channel.prototype.deactive = function() {};
+
+      Channel.prototype.isActive = function() {};
+
+      /**
+       * 发送消息
+       * @param  {Hash} msg 消息结构
+       * @return {[type]}     [description]
+      */
+
+
+      Channel.prototype.send = function(channel, msg) {
+        return this.socket.emit(channel, JSON.stringify(msg));
+      };
+
+      /**
+       * 执行命令
+       * @param  {String} cmd     命令名称, 像是 commands 中的名称
+       * @param  {[Hash]} options 参数结构
+       * @return {[type]}         [description]
+      */
+
+
+      Channel.prototype.command = function(cmd, data, options, callback) {
+        var class_name, command, klass;
+        if (data == null) {
+          data = null;
+        }
+        if (options == null) {
+          options = {};
+        }
+        if (!this.commands.contain(cmd)) {
+          return;
+        }
+        class_name = "" + (cmd.toTitleCase()) + "Command";
+        klass = Caramal[class_name];
+        if (klass == null) {
+          throw new Error("not have Caramal." + class_name + " class");
+        }
+        command = new klass(this, cmd, options);
+        this._setupHooks(cmd, command);
+        if (options['return'] != null) {
+          this.manager.addReturnCommand(command);
+        }
+        return command.execute(data, callback);
+      };
+
+      Channel.prototype._setupHooks = function(cmd, command) {
+        var hook, hooks, name, _results;
+        hooks = this.constructor.hooks;
+        _results = [];
+        for (name in hooks) {
+          hook = hooks[name];
+          if (hook.name === cmd) {
+            if (hook.type === 'before') {
+              _results.push(command.beforeExecute(hook.proc));
+            } else if (hook.type === 'after') {
+              _results.push(command.afterExecute(hook.proc));
+            } else {
+
+            }
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      Channel.create = function(options) {
+        var manager;
+        if (options == null) {
+          options = {};
+        }
+        manager = options.manager || this.default_manager;
+        return manager.addChannel(Channel.nextId, new Channel(options));
+      };
+
+      Channel.beforeCommand = function(cmd, callback) {
+        return this.hooks["before_" + cmd] = {
+          name: cmd,
+          proc: callback,
+          type: 'before'
+        };
+      };
+
+      Channel.afterCommand = function(cmd, callback) {
+        return this.hooks["after_" + cmd] = {
+          name: cmd,
+          proc: callback,
+          type: 'after'
+        };
+      };
+
+      return Channel;
+
+    })(Event);
+    return exports.Channel = Channel;
+  });
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  define('chat/chat',['core', 'chat/channel', 'chat/manager', 'util', 'exports'], function(Caramal, Channel, MessageManager, Util, exports) {
+    var Chat;
+    Chat = (function(_super) {
+      __extends(Chat, _super);
+
+      Chat.prototype.commands = ['open', 'join'];
+
+      Chat.prototype.type = Channel.TYPES['chat'];
+
+      Chat.beforeCommand('open', function(options) {
+        if (options == null) {
+          options = {};
+        }
+        return Util.merge(options, {
+          type: this.channel.type,
+          user: this.channel.user
+        });
+      });
+
+      Chat.afterCommand('open', function(ret) {
+        return this.channel.room = ret;
+      });
+
+      /**
+       * 单一用户聊天
+       * @param  {String} login  用户登陆名
+       * @return {Chat}          Chat 对象
+      */
+
+
+      function Chat(user, options) {
+        this.user = user;
+        this.options = options;
+        Chat.__super__.constructor.call(this, this.options);
+      }
+
+      /**
+       * 发送消息
+       * @param  {Hash} msg 消息结构
+       * @return {[type]}     [description]
+      */
+
+
+      Chat.prototype.send = function(msg) {
+        msg = (function() {
+          if (typeof msg === 'string') {
+            return {
+              msg: msg
+            };
+          } else if (Util.isObject(msg)) {
+            return msg;
+          } else {
+            throw new Error('invalid message type');
+          }
+        })();
+        msg.room = this.room;
+        return this.socket.emit('chat', JSON.stringify(msg));
+      };
+
+      /**
+       * 暂时离开的通知
+      */
+
+
+      Chat.prototype.afk = function() {
+        return this.socket.emit('afk', JSON.stringify({
+          room: this.room
+        }));
+      };
+
+      /**
+       * 正在输入的功能
+      */
+
+
+      Chat.prototype.being_input = function() {
+        return this.socket.emit('inputing', JSON.stringify({
+          room: this.room
+        }));
+      };
+
+      Chat.create = function(user, options) {
+        var manager;
+        if (options == null) {
+          options = {};
+        }
+        manager = options.manager || this.default_manager;
+        return manager.addNamedChannel(user, new Chat(user, options));
+      };
+
+      return Chat;
+
+    })(Channel);
+    Caramal.MessageManager.registerDispatch('command', function(info, next) {
+      var channel;
+      if (info.type === Channel.TYPES['chat']) {
+        Caramal.log('Receive Comamnd:', info);
+      }
+      switch (info.action) {
+        case 'join':
+          if (info.type === Channel.TYPES['chat']) {
+            channel = Caramal.MessageManager.roomOfChannel(info.room);
+            channel = channel != null ? channel : Chat.create(info.from, {
+              room: info.room
+            });
+            return channel.command('join');
+          } else {
+            return next();
+          }
+          break;
+        default:
+          return next();
+      }
+    });
+    Caramal.MessageManager.registerDispatch('message', function(info, next) {
+      var channel;
+      Caramal.log('Receive Message:', info);
+      channel = Caramal.MessageManager.roomOfChannel(info.room);
+      if (channel != null) {
+        return channel.emit('message', info);
+      } else {
+        return next();
+      }
+    });
+    Caramal.MessageManager.registerDispatch('event', function(event, next) {
+      var channel;
+      Caramal.log('Receive Event:', event);
+      channel = Caramal.MessageManager.roomOfChannel(event.room);
+      if (channel != null) {
+        return channel.emit('event', event);
+      } else {
+        return next();
+      }
+    });
+    return exports.Chat = Chat;
+  });
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  define('chat/group',['core', 'chat/channel', 'chat/chat', 'util', 'exports'], function(Caramal, Channel, Chat, Util, exports) {
+    var Group;
+    Group = (function(_super) {
+      __extends(Group, _super);
+
+      Group.prototype.commands = ['open', 'join'];
+
+      Group.prototype.type = Channel.TYPES['group'];
+
+      Group.beforeCommand('open', function(options) {
+        if (options == null) {
+          options = {};
+        }
+        return Util.merge(options, {
+          type: this.channel.type,
+          group: this.channel.group
+        });
+      });
+
+      Group.afterCommand('open', function(ret) {
+        return this.channel.room = ret;
+      });
+
+      function Group(group, options) {
+        this.group = group;
+        this.options = options;
+        Group.__super__.constructor.call(this, this.options);
+      }
+
+      /**
+       * 发送消息
+       * @param  {Hash} msg 消息结构
+       * @return {[type]}     [description]
+      */
+
+
+      Group.prototype.send = function(msg) {
+        msg = (function() {
+          if (typeof msg === 'string') {
+            return {
+              msg: msg
+            };
+          } else if (Util.isObject(msg)) {
+            return msg;
+          } else {
+            throw new Error('invalid message type');
+          }
+        })();
+        msg.room = this.room;
+        return this.socket.emit('chat', JSON.stringify(msg));
+      };
+
+      Group.create = function(group, options) {
+        var manager;
+        if (options == null) {
+          options = {};
+        }
+        manager = options.manager || this.default_manager;
+        return manager.addNamedChannel(group, new Group(group, options));
+      };
+
+      return Group;
+
+    })(Channel);
+    Caramal.MessageManager.registerDispatch('command', function(info, next) {
+      var channel;
+      if (info.type === Channel.TYPES['group']) {
+        Caramal.log('Receive Comamnd:', info);
+      }
+      switch (info.action) {
+        case 'join':
+          if (info.type === Channel.TYPES['group']) {
+            channel = Caramal.MessageManager.roomOfChannel(info.room);
+            if (info.group != null) {
+              channel = channel != null ? channel : Group.create(info.group, {
+                room: info.room
+              });
+              return channel.command('join');
+            } else {
+              return next();
+            }
+          } else {
+            return next();
+          }
+          break;
+        default:
+          return next();
+      }
+    });
+    return exports.Group = Group;
+  });
+
+}).call(this);
+
+(function() {
+  define('chat',['caramal', 'chat/command', 'chat/channel', 'chat/chat', 'chat/group', 'chat/manager', 'exports'], function(Caramal, Command, Channel, Chat, Group, ClientMessageManager, exports) {
+    Caramal.Channel = Channel;
+    Caramal.Chat = Chat;
+    Caramal.Group = Group;
+    Caramal.ClientMessageManager = ClientMessageManager;
+    return Caramal;
+  });
+
+}).call(this);
+  return require('chat');}));

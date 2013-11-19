@@ -20,7 +20,7 @@ module.exports = function(grunt) {
         src: 'Gruntfile.js'
       },
       dist: {
-        src: [ 'src/**/*.js', '!src/vendor/**/*.js' ]
+        src: [ 'src/**/*.js', '!src/vendor/**/*.js', '!src/almond.js' ]
       }
     },
     browserify: {
@@ -88,12 +88,34 @@ module.exports = function(grunt) {
       }
     },
     requirejs: {
-      compile: {
+      // compile: {
+      //   options: {
+      //     baseUrl: './compile',
+      //     name: 'almond',
+      //     mainConfigFile: 'require.js',
+      //     out: 'dist/caramal_chat.js',
+      //     include: ['chat']
+      //   }
+      // },
+      caramal: {
         options: {
           baseUrl: './compile',
-          name: 'caramal',
+          name: 'almond',
           mainConfigFile: 'require.js',
-          out: 'dist/client.js',
+          include: ['caramal'],
+          out: 'dist/caramal_client.js',
+        }
+      },
+      chat: {
+        options: {
+          baseUrl: './compile',
+          name: 'almond',
+          mainConfigFile: 'require.js',
+          include: ['chat'],
+          out: 'dist/caramal_chat.js',
+          wrap: {
+            end: "  return require('chat');}));"
+          }
         }
       }
     },
