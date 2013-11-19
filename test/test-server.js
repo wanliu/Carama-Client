@@ -52,7 +52,7 @@ io.on('connection', function (socket) {
           room: room,
           from: current_user,
           type: info.type }))
-        callback(room);
+        callback(null, room);
         break;
       case 2:
         room = generateId();
@@ -61,7 +61,7 @@ io.on('connection', function (socket) {
           room: room,
           group: info.group,
           type: info.type }))
-        callback(room);
+        callback(null, room);
         break;
       }
     } catch (e) {

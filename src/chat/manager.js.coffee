@@ -105,7 +105,7 @@ define ['core', 'exports'], (Caramal, exports) ->
 
     roomOfChannel: (room) ->
       for id, chn of @channels
-        if chn.options && chn.options.room == room
+        if chn.room == room
           return chn
       null
 

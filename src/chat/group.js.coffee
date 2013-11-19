@@ -6,13 +6,15 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
       'join'
     ]
 
+    hooks: {}
+
     type: Channel.TYPES['group']
 
     @beforeCommand 'open', (options = {}) ->
       Util.merge options, { type: @channel.type, group: @channel.group }
 
-    @afterCommand 'open', (ret) ->
-      @channel.room = ret
+    @afterCommand 'open', (ret, room) ->
+      @channel.room = room
 
     constructor: (@group, @options) ->
       super(@options)

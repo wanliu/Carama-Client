@@ -41,23 +41,39 @@ define ['core', 'util'], (Caramal, Util) ->
 
     _doBeforeCallback: (data) ->
       if Util.isFunc(@before_callback)
-        @before_callback(data)
+        data = [data] unless Util.isArray(data)
+
+        @before_callback.apply(@, data)
 
     _doAfterCallback: (data) ->
+
       if Util.isFunc(@after_callback)
-        @after_callback(data)
+        data = [data] unless Util.isArray(data)
+
+        @after_callback.apply(@, data)
 
     _doReturnCallback: (data) ->
       if Util.isFunc(@return_callback)
         @return_callback(data)
 
+        data = [data] unless Util.isArray(data)
+
+        @return_callback.apply(@, data)
+
     sendCommand: (cmd, data = {}, callback ) ->
       send_data = Util.merge {
                     command_id: @option.id,
                   }, data
-      @socket.emit cmd, JSON.stringify(send_data), (ret) =>
-        @_doAfterCallback(ret)
-        callback(ret) if Util.isFunc(callback)
+      @socket.emit cmd, JSON.stringify(send_data), (args...) =>
+        first = args[0]
+        if Util.isObject(first) and first.error?
+          @onError(first)
+        else
+          @_doAfterCallback(args)
+          callback.apply(@,args) if Util.isFunc(callback)
+
+    onError: (msg) ->
+      @channel.emit('error', msg)
 
   class OpenCommand extends Command
 

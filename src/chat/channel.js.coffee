@@ -20,8 +20,6 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
     @nextId = 0
 
-    @hooks = {}
-
     ###*
      * 管理器对象
      * @type {[type]}
@@ -107,6 +105,9 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     onEvent: (@event_callback) ->
       @on('event', @event_callback)
 
+    onError: (@error_callback) ->
+      @on('error', @error_callback)
+
     ###*
      * 更换消息管理器，会使得这个 Channel 完全处理于别一个消息处理机制中
      * @param {MessageManager} @manager 消息管理器对象
@@ -158,7 +159,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       command.execute(data, callback)
 
     _setupHooks: (cmd, command) ->
-      hooks = @constructor.hooks
+      hooks = @hooks
       for name, hook of hooks
         if hook.name == cmd
           if hook.type == 'before'
@@ -174,14 +175,14 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
 
     @beforeCommand: (cmd, callback) ->
-      @hooks["before_#{cmd}"] = {
+      @prototype.hooks["before_#{cmd}"] = {
         name: cmd,
         proc: callback
         type: 'before',
       }
 
     @afterCommand = (cmd, callback) ->
-      @hooks["after_#{cmd}"] = {
+      @prototype.hooks["after_#{cmd}"] = {
         name: cmd,
         proc: callback
         type: 'after',

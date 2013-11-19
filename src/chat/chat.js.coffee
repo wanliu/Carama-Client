@@ -1,19 +1,40 @@
 define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Channel, MessageManager, Util, exports) ->
 
   class Chat extends Channel
+    ###
+    Example
+      Caramal.MessageManager.setClient(clients.client);
+      # => SocketNamespace {socket: Socket, name: "", flags: Object, json: Flag, ackPackets: 0…}
+      chat = Caramal.Chat.create('hysios')
+      # => Chat {user: "hysios", options: Object, id: 0, message_buffer: Array[0], state: "open"…}
+      chat.onMessage(function(msg){
+         console.log(msg);
+      });
+      # => 1
+      chat.send('hi')
+      # => SocketNamespace {socket: Socket, name: "", flags: Object, json: Flag, ackPackets: 0…}
+      channel
+      # => Chat {user: "hysios", options: Object, id: 0, message_buffer: Array[0], state: "open"…}
+      # => Object {msg: "hi", user: "hyysios", action: "chat"} VM4331:3
+      chat.send('everybody')
+      # => SocketNamespace {socket: Socket, name: "", flags: Object, json: Flag, ackPackets: 0…}
+      # => Object {msg: "everybody", user: "hyysios", action: "chat"} VM4331:3
+    ###
 
     commands: [
       'open',
       'join'
     ]
 
+    hooks: {}
+
     type: Channel.TYPES['chat']
 
     @beforeCommand 'open', (options = {}) ->
       Util.merge options, { type: @channel.type, user: @channel.user }
 
-    @afterCommand 'open', (ret) ->
-      @channel.room = ret
+    @afterCommand 'open', (ret, room) ->
+      @channel.room = room
 
       # Util.merge options, { type: 1, user: @channel.user }
 
