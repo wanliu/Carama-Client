@@ -144,6 +144,12 @@ module.exports = function(grunt) {
           configFile: 'karma.conf.js',
           // files: ['test/spec/**/*_spec.js']
         }
+      },
+      precompile: {
+        options: {
+          configFile: 'karma.precompile.conf.js',
+          // files: ['test/spec/**/*_spec.js']
+        }
       }
     },
     clean: {
@@ -166,8 +172,17 @@ module.exports = function(grunt) {
     'build',
     'test:chat_server',
     'connect:test',
-    'karma'
+    'karma:unit'
   ]);
+
+  grunt.registerTask('test:precompile', [
+    'coffee',
+    'build',
+    'test:chat_server',
+    'connect:test',
+    'karma:precompile'
+  ]);
+
 
   grunt.registerTask('test:chat_server', function(target) {
     var spawn = require('child_process').spawn,

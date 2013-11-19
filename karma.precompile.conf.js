@@ -10,26 +10,16 @@ module.exports = function(config) {
 
     // frameworks to use
     frameworks: [
-      'requirejs',
       'mocha',
       'chai'],
 
 
     files: [
-      // {pattern: 'lib/**/*.js', included: false},
-      {pattern: 'src/**/*.js', included: false},
-      {pattern: 'compile/**/*.js', included: false},
-      {pattern: 'compile/chat/*.js', included: false},
-      {pattern: 'test/**/*_spec.js', included: false},
+      {pattern: 'dist/caramal_chat.js'},
+      {pattern: 'test/precompile/*_spec.js'},
 
-      'test/test-main.js'
+      'test/test-precompile-main.js'
     ],
-
-    // list of files to exclude
-    exclude: [
-        'test/precompile/*.js'
-    ],
-
 
     // test results reporter to use
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
