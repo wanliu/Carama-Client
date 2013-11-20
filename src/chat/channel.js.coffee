@@ -22,7 +22,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
     ###*
      * 管理器对象
-     * @type {[type]}
+     * @type {Caramal.ClientMessageManager}
     ###
     @default_manager = Caramal.MessageManager
 
@@ -43,9 +43,9 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       ###*
        * 频道状态
-       * @type {[String]}
+       * @type {String}
       ###
-      @state = 'open'
+      @state = 'inactive'
 
       manager = @options.manager || @constructor.default_manager
       @setOptions(@options)
@@ -53,7 +53,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       ###*
        * socket.io 的 Socket 对象
-       * @type {[Socket]}
+       * @type {Socket}
       ###
       @bindSocket(@manager.client);
       @_buildCommands()
@@ -62,6 +62,10 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       for name, opt of options
         @[name] = opt
 
+    setState: (@state) ->
+
+    getState: () ->
+      @state
 
     bindSocket: (@socket) ->
 
@@ -86,26 +90,31 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
     ###*
      * 接受到消息数据的回调
-     * @param  {[hash]} msg 消息数据
+     * @param  {Function} message_callback 消息回调
     ###
     onMessage: (@message_callback) ->
       @on('message', @message_callback)
 
     ###*
      * 来至服务端的命令回调
-     * @param  {hash} command 命令对象
+     * @param  {Function} command 命令对象
     ###
     onCommand: (@command_callback) ->
       @on('command', @command_callback)
 
     ###*
      * 处发事件的回调
-     * @param  {hash} event 事件对象
+     * @param  {Function} event 事件对象
     ###
     onEvent: (@event_callback) ->
       @on('event', @event_callback)
 
+    ###*
+     * 错误回调
+     * @param  {Function} @error_callback 错误回调
+    ###
     onError: (@error_callback) ->
+      @setState('faild')
       @on('error', @error_callback)
 
     ###*
@@ -116,23 +125,23 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
     ###*
      * 激活频道，为了处理用户空闲，离开与消息通知等功能， 在用户进入输入时，实际上会自动调用
-     * @return {[type]} [description]
     ###
     active: () ->
+      @active = true
 
     ###*
      * 反激活频道，使频道进入无人状态，消息会到来，会由 OnMessage 处发变成 OnDeactiveMessage 处发
-     * @return {[type]} [description]
     ###
     deactive: () ->
+      @active = false
 
 
     isActive: () ->
+      @active
 
     ###*
      * 发送消息
-     * @param  {Hash} msg 消息结构
-     * @return {[type]}     [description]
+     * @param  {Object} msg 消息结构
     ###
     send: (channel, msg) ->
       @socket.emit(channel, JSON.stringify(msg))
@@ -140,8 +149,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     ###*
      * 执行命令
      * @param  {String} cmd     命令名称, 像是 commands 中的名称
-     * @param  {[Hash]} options 参数结构
-     * @return {[type]}         [description]
+     * @param  {Object} options 参数结构
     ###
     command: (cmd, data = null, options = {}, callback) ->
 

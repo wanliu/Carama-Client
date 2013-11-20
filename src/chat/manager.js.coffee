@@ -1,4 +1,4 @@
-define ['core', 'exports'], (Caramal, exports) ->
+define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
 
   class Dispatchers
 
@@ -24,7 +24,7 @@ define ['core', 'exports'], (Caramal, exports) ->
           break
 
 
-  class ClientMessageManager
+  class ClientMessageManager extends Event
 
     constructor: (@client) ->
       @message_dispatchs = {}

@@ -4616,7 +4616,82 @@ if (typeof define === "function" && define.amd) {
 }).call(this);
 
 (function() {
-  define('chat/manager',['core', 'exports'], function(Caramal, exports) {
+  define('event',['util'], function(Util) {
+    var Event;
+    return Event = (function() {
+      function Event() {}
+
+      Event.prototype._listeners = {};
+
+      Event.prototype.addEventListener = function(event, callback) {
+        var callbacks;
+        if ((callbacks = this._listeners[event]) == null) {
+          callbacks = this._listeners[event] = [];
+        }
+        if (Util.isArray(callbacks)) {
+          return callbacks.push(callback);
+        }
+      };
+
+      Event.prototype.removeEventListener = function(event, callback) {
+        var callbacks, cb, i, _i, _len;
+        callbacks = this._listeners[event];
+        if ((callbacks != null) && Util.isArray(callbacks)) {
+          for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
+            cb = callbacks[i];
+            if (Util.isFunc(cb) && callback === cb) {
+              return callbacks.splice(i, 1)[0];
+            }
+          }
+        }
+      };
+
+      Event.prototype.once = function(event, callback) {
+        var cb, i, _i, _len;
+        if ((typeof callbacks !== "undefined" && callbacks !== null) && Util.isArray(callbacks)) {
+          for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
+            cb = callbacks[i];
+            if (Util.isFunc(cb) && callback === cb) {
+              return;
+            }
+          }
+          return this.on(event, callback);
+        }
+      };
+
+      Event.prototype.on = function(event, callback) {
+        return this.addEventListener(event, callback);
+      };
+
+      Event.prototype.emit = function(event, data) {
+        var callback, callbacks, _i, _len, _results;
+        callbacks = this._listeners[event] || [];
+        _results = [];
+        for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
+          callback = callbacks[_i];
+          if (Util.isFunc(callback)) {
+            _results.push(callback(data));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      Event.prototype.send = function(event, data) {};
+
+      return Event;
+
+    })();
+  });
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  define('chat/manager',['core', 'event', 'exports'], function(Caramal, Event, exports) {
     var ClientMessageManager, Dispatchers;
     Dispatchers = (function() {
       function Dispatchers(name) {
@@ -4655,7 +4730,9 @@ if (typeof define === "function" && define.amd) {
       return Dispatchers;
 
     })();
-    ClientMessageManager = (function() {
+    ClientMessageManager = (function(_super) {
+      __extends(ClientMessageManager, _super);
+
       function ClientMessageManager(client) {
         this.client = client;
         this.message_dispatchs = {};
@@ -4774,81 +4851,9 @@ if (typeof define === "function" && define.amd) {
 
       return ClientMessageManager;
 
-    })();
+    })(Event);
     Caramal.MessageManager || (Caramal.MessageManager = new ClientMessageManager(window.client));
     return exports.ClientMessageManager = ClientMessageManager;
-  });
-
-}).call(this);
-
-(function() {
-  define('event',['util'], function(Util) {
-    var Event;
-    return Event = (function() {
-      function Event() {}
-
-      Event.prototype._listeners = {};
-
-      Event.prototype.addEventListener = function(event, callback) {
-        var callbacks;
-        if ((callbacks = this._listeners[event]) == null) {
-          callbacks = this._listeners[event] = [];
-        }
-        if (Util.isArray(callbacks)) {
-          return callbacks.push(callback);
-        }
-      };
-
-      Event.prototype.removeEventListener = function(event, callback) {
-        var callbacks, cb, i, _i, _len;
-        callbacks = this._listeners[event];
-        if ((callbacks != null) && Util.isArray(callbacks)) {
-          for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
-            cb = callbacks[i];
-            if (Util.isFunc(cb) && callback === cb) {
-              return callbacks.splice(i, 1)[0];
-            }
-          }
-        }
-      };
-
-      Event.prototype.once = function(event, callback) {
-        var cb, i, _i, _len;
-        if ((typeof callbacks !== "undefined" && callbacks !== null) && Util.isArray(callbacks)) {
-          for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
-            cb = callbacks[i];
-            if (Util.isFunc(cb) && callback === cb) {
-              return;
-            }
-          }
-          return this.on(event, callback);
-        }
-      };
-
-      Event.prototype.on = function(event, callback) {
-        return this.addEventListener(event, callback);
-      };
-
-      Event.prototype.emit = function(event, data) {
-        var callback, callbacks, _i, _len, _results;
-        callbacks = this._listeners[event] || [];
-        _results = [];
-        for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
-          callback = callbacks[_i];
-          if (Util.isFunc(callback)) {
-            _results.push(callback(data));
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      };
-
-      Event.prototype.send = function(event, data) {};
-
-      return Event;
-
-    })();
   });
 
 }).call(this);
@@ -4885,7 +4890,7 @@ if (typeof define === "function" && define.amd) {
 
       /**
        * 管理器对象
-       * @type {[type]}
+       * @type {Caramal.ClientMessageManager}
       */
 
 
@@ -4909,16 +4914,16 @@ if (typeof define === "function" && define.amd) {
         this.message_buffer = [];
         /**
          * 频道状态
-         * @type {[String]}
+         * @type {String}
         */
 
-        this.state = 'open';
+        this.state = 'inactive';
         manager = this.options.manager || this.constructor.default_manager;
         this.setOptions(this.options);
         this.setManager(manager);
         /**
          * socket.io 的 Socket 对象
-         * @type {[Socket]}
+         * @type {Socket}
         */
 
         this.bindSocket(this.manager.client);
@@ -4933,6 +4938,14 @@ if (typeof define === "function" && define.amd) {
           _results.push(this[name] = opt);
         }
         return _results;
+      };
+
+      Channel.prototype.setState = function(state) {
+        this.state = state;
+      };
+
+      Channel.prototype.getState = function() {
+        return this.state;
       };
 
       Channel.prototype.bindSocket = function(socket) {
@@ -4969,7 +4982,7 @@ if (typeof define === "function" && define.amd) {
 
       /**
        * 接受到消息数据的回调
-       * @param  {[hash]} msg 消息数据
+       * @param  {Function} message_callback 消息回调
       */
 
 
@@ -4980,7 +4993,7 @@ if (typeof define === "function" && define.amd) {
 
       /**
        * 来至服务端的命令回调
-       * @param  {hash} command 命令对象
+       * @param  {Function} command 命令对象
       */
 
 
@@ -4991,7 +5004,7 @@ if (typeof define === "function" && define.amd) {
 
       /**
        * 处发事件的回调
-       * @param  {hash} event 事件对象
+       * @param  {Function} event 事件对象
       */
 
 
@@ -5000,8 +5013,15 @@ if (typeof define === "function" && define.amd) {
         return this.on('event', this.event_callback);
       };
 
+      /**
+       * 错误回调
+       * @param  {Function} @error_callback 错误回调
+      */
+
+
       Channel.prototype.onError = function(error_callback) {
         this.error_callback = error_callback;
+        this.setState('faild');
         return this.on('error', this.error_callback);
       };
 
@@ -5017,26 +5037,29 @@ if (typeof define === "function" && define.amd) {
 
       /**
        * 激活频道，为了处理用户空闲，离开与消息通知等功能， 在用户进入输入时，实际上会自动调用
-       * @return {[type]} [description]
       */
 
 
-      Channel.prototype.active = function() {};
+      Channel.prototype.active = function() {
+        return this.active = true;
+      };
 
       /**
        * 反激活频道，使频道进入无人状态，消息会到来，会由 OnMessage 处发变成 OnDeactiveMessage 处发
-       * @return {[type]} [description]
       */
 
 
-      Channel.prototype.deactive = function() {};
+      Channel.prototype.deactive = function() {
+        return this.active = false;
+      };
 
-      Channel.prototype.isActive = function() {};
+      Channel.prototype.isActive = function() {
+        return this.active;
+      };
 
       /**
        * 发送消息
-       * @param  {Hash} msg 消息结构
-       * @return {[type]}     [description]
+       * @param  {Object} msg 消息结构
       */
 
 
@@ -5047,8 +5070,7 @@ if (typeof define === "function" && define.amd) {
       /**
        * 执行命令
        * @param  {String} cmd     命令名称, 像是 commands 中的名称
-       * @param  {[Hash]} options 参数结构
-       * @return {[type]}         [description]
+       * @param  {Object} options 参数结构
       */
 
 
@@ -5139,6 +5161,27 @@ if (typeof define === "function" && define.amd) {
     Chat = (function(_super) {
       __extends(Chat, _super);
 
+      /*
+      Example
+        Caramal.MessageManager.setClient(clients.client);
+        # => SocketNamespace {socket: Socket, name: "", flags: Object, json: Flag, ackPackets: 0…}
+        chat = Caramal.Chat.create('hysios')
+        # => Chat {user: "hysios", options: Object, id: 0, message_buffer: Array[0], state: "open"…}
+        chat.onMessage(function(msg){
+           console.log(msg);
+        });
+        # => 1
+        chat.send('hi')
+        # => SocketNamespace {socket: Socket, name: "", flags: Object, json: Flag, ackPackets: 0…}
+        channel
+        # => Chat {user: "hysios", options: Object, id: 0, message_buffer: Array[0], state: "open"…}
+        # => Object {msg: "hi", user: "hyysios", action: "chat"} VM4331:3
+        chat.send('everybody')
+        # => SocketNamespace {socket: Socket, name: "", flags: Object, json: Flag, ackPackets: 0…}
+        # => Object {msg: "everybody", user: "hyysios", action: "chat"} VM4331:3
+      */
+
+
       Chat.prototype.commands = ['open', 'join'];
 
       Chat.prototype.hooks = {};
@@ -5149,6 +5192,7 @@ if (typeof define === "function" && define.amd) {
         if (options == null) {
           options = {};
         }
+        this.channel.setState('opening');
         return Util.merge(options, {
           type: this.channel.type,
           user: this.channel.user
@@ -5156,6 +5200,7 @@ if (typeof define === "function" && define.amd) {
       });
 
       Chat.afterCommand('open', function(ret, room) {
+        this.channel.setState('open');
         return this.channel.room = room;
       });
 
@@ -5175,7 +5220,6 @@ if (typeof define === "function" && define.amd) {
       /**
        * 发送消息
        * @param  {Hash} msg 消息结构
-       * @return {[type]}     [description]
       */
 
 
@@ -5241,7 +5285,8 @@ if (typeof define === "function" && define.amd) {
             channel = channel != null ? channel : Chat.create(info.from, {
               room: info.room
             });
-            return channel.command('join');
+            channel.command('join');
+            return Caramal.MessageManager.emit('channel:new', channel);
           } else {
             return next();
           }

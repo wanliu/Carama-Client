@@ -31,9 +31,11 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     type: Channel.TYPES['chat']
 
     @beforeCommand 'open', (options = {}) ->
+      @channel.setState('opening')
       Util.merge options, { type: @channel.type, user: @channel.user }
 
     @afterCommand 'open', (ret, room) ->
+      @channel.setState('open')
       @channel.room = room
 
       # Util.merge options, { type: 1, user: @channel.user }
@@ -49,7 +51,6 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     ###*
      * 发送消息
      * @param  {Hash} msg 消息结构
-     * @return {[type]}     [description]
     ###
     send: (msg) ->
       msg = if typeof msg == 'string'
@@ -92,6 +93,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
           channel = Caramal.MessageManager.roomOfChannel(info.room)
           channel = if channel? then channel else Chat.create(info.from, {room: info.room})
           channel.command('join')
+          Caramal.MessageManager.emit('channel:new', channel)
         else
           next()
       else
