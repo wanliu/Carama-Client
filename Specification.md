@@ -3,18 +3,18 @@
 ### 引用
 
 ```html
-<SCRIPT type='type/javascript' src='.../caramal-client.js'></SCRIPT>
+<SCRIPT type='type/javascript' src='.../caramal_client.js'></SCRIPT>
 ```
 
 
 ### 使用
 
 ```js
-  window.caramal_client = CaramalClient.connect({ url: 'host', token: 'adfasdfasdfadsf'});
+  window.client = Caramal.connect({ url: 'host', token: 'adfasdfasdfadsf'});
     
   // 重复使用
-  window.caramal_client = window.caramal_client ||
-                          CaramalClient.connect({ url: 'host', token: 'adfasdfasdfadsf'});
+  window.client = window.client ||
+                          Caramal.connect({ url: 'host', token: 'adfasdfasdfadsf'});
 ```
 
 
@@ -23,42 +23,42 @@
 ```js
 
   // 连接成功
-  caramal_client.on('connect', function () {
+  client.on('connect', function () {
     console.log('connected');
   });
 
   // 连接中... 
-  caramal_client.on('connecting', function () {
+  client.on('connecting', function () {
     console.log('connecting');
   });
   
   // 断开连接 error 是错误提示, booted  被踢
-  caramal_client.on('disconnect', function (error) {
+  client.on('disconnect', function (error) {
     console.log('disconnect' + error);
   });
 
   // 连接失败
-  caramal_client.on('connect_failed', function () {
+  client.on('connect_failed', function () {
     console.log('connect_failed');
   });
   
   // 发生错误
-  caramal_client.on('error', function (err) {
+  client.on('error', function (err) {
     console.log('error: ' + err);
   });
   
   // 重连失败
-  caramal_client.on('reconnect_failed', function () {
+  client.on('reconnect_failed', function () {
     console.log('reconnect_failed');
   });
   
   // 重新连接成功
-  caramal_client.on('reconnect', function () {
+  client.on('reconnect', function () {
     console.log('reconnected ');
   });
   
   // 重新连接中...
-  caramal_client.on('reconnecting', function () {
+  client.on('reconnecting', function () {
     console.log('reconnecting');
   });
 
@@ -67,11 +67,11 @@
 ### 订阅通知
 
 ```js 
-  caramal_client.subscribe('/transactions/completed', function(data){
+  client.subscribe('/transactions/completed', function(data){
     //...
   });
   
-  caramal_client.subscribe('/transactions/1/completed', function(data){
+  client.subscribe('/transactions/1/completed', function(data){
     //...
   });  
 ```
@@ -79,7 +79,7 @@
 取消订阅
 
 ```js 
-  caramal_client.unsubscribe('/transactions/completed');
+  client.unsubscribe('/transactions/completed');
 ```
 
 ### 发布通知
@@ -98,7 +98,7 @@
 
 ### 发送消息 
 ```js
-  caramal_client.emit('join', JSON.stringify({room: info.room});
+  client.emit('join', JSON.stringify({room: info.room});
 ```
 
 # 聊天对话部分
@@ -113,6 +113,32 @@
 ### 使用
 
 ```js
-  chat = new CaramalChat(caramal_client); /* option caramal_client 可以是隐式引入 */
+  Caramal.MessageManager.setClient(clients.client)
+  
+  chat = Caramal.Chat.create('hysios');
+  
+  // 绑定消息显示
+  chat.onMessage(function(msg) {
+     console.log(msg);
+  })
+  
+  // 绑定错误处理
+  
+  chat.onError(function(error) {
+     console.log(error);
+  });
+  
+  // 打开频道
+  chat.open()
+  
+  // 输出 room id 
+  chat.room
+  
+  // 发送消息
+  
+  chat.send('hi')
+  
+  // 你会看到这样一个信息输出在控制台
+  // => Object {msg: "hi", user: "hyysios", action: "chat"} 
 ```
 
