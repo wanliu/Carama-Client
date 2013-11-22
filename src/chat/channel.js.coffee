@@ -79,13 +79,16 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       if @hasOwnProperty method
         throw new Error("always has #{method} property or function")
 
-      @[method] = (args...)  =>
+      @[method] = (data = null, options = {}, callback = null)  =>
 
-        last = args.splice(-1)[0]
-        if Util.isFunc(last)
-          callback = last
 
-        [data, options] = args
+        if Util.isFunc(data)
+          callback = data
+          data = null
+          options = {}
+        else if Util.isFunc(options)
+          callback = options
+          options = {}
 
         @command(method, data, options, callback)
 

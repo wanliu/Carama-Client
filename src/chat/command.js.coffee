@@ -27,7 +27,7 @@ define ['core', 'util'], (Caramal, Util) ->
       @option = new CommandOption(@options)
 
     execute: (data, callback) ->
-      data = @_doBeforeCallback(data)
+      data = value if value = @_doBeforeCallback(data)
       @doExecute(data, callback)
 
     doExecute: (data, callback) ->
@@ -85,7 +85,10 @@ define ['core', 'util'], (Caramal, Util) ->
 
     doExecute: (data, callback = null) ->
       unless data?
-        data = {room: @channel.options.room }
+        data = {room: @channel.room }
+      else
+        data = {room: data}
+
       @sendCommand 'join', data, callback
 
   class CloseCommand extends Command

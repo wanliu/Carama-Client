@@ -60,8 +60,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
           unless channel?
             channel = Group.create(info.group, {room: info.room})
-
-            channel.command('join')
+            channel.command('join', info.room)
             channel.setState('open')
             Caramal.MessageManager.emit('channel:new', channel)
         else

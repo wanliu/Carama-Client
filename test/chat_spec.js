@@ -6,10 +6,16 @@ define(['caramal', 'chat'], function(Caramal) {
       // transports: ['websocket'],
       'force new connection': true
     };
+  var client;
 
-  var client = Caramal.connect(url, options);
+  before(function(){
+    client = Caramal.connect(url, options);
+    Caramal.MessageManager.setClient(client);
+  })
 
-  Caramal.MessageManager.setClient(client);
+  after(function(){
+    client.close();
+  })
 
   describe('Caramal Chat test ', function(done){
 
@@ -22,6 +28,19 @@ define(['caramal', 'chat'], function(Caramal) {
       });
 
     });
+
+    it('join chat', function(done){
+
+      chat = Caramal.Chat.of('test1')
+      chat.join('1111111111111')
+
+      setTimeout(function(){
+        done();
+      }, 1000)
+      // chat.info(function(chat, info){
+      //   console.log(info);
+      // })
+    })
 
     it ('wait join chat', function(done){
       // var channels = Caramal.MessageManager.channels,

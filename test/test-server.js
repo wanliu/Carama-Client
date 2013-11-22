@@ -82,8 +82,8 @@ io.on('connection', function (socket) {
 
   socket.on('join', function(data, callback){
     try {
+      console.log('join:', data);
       var info = JSON.parse(data);
-
       socket.join(info.room)
     } catch (e) {
       console.log(e.message)

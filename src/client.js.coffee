@@ -14,7 +14,7 @@ define ['socket.io', 'core'], (io, Caramal) ->
       @on(channel, callback)
 
     unsubscribe: (channel, callback) ->
-      @socket.removeListener(channel);
+      @socket.removeListener(channel, callback);
 
     emit: (event, data, callback) ->
       @socket.emit(event, data, callback)
@@ -24,6 +24,13 @@ define ['socket.io', 'core'], (io, Caramal) ->
 
     get: (name) ->
       @values[name]
+
+    reconnect: () ->
+      @socket.socket.reconnect()
+
+
+    close: () ->
+      @socket.disconnect()
 
   Caramal.connect = (url , options) ->
 

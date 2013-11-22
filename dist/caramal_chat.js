@@ -4333,7 +4333,7 @@ if (typeof define === "function" && define.amd) {
       };
 
       Client.prototype.unsubscribe = function(channel, callback) {
-        return this.socket.removeListener(channel);
+        return this.socket.removeListener(channel, callback);
       };
 
       Client.prototype.emit = function(event, data, callback) {
@@ -4346,6 +4346,10 @@ if (typeof define === "function" && define.amd) {
 
       Client.prototype.get = function(name) {
         return this.values[name];
+      };
+
+      Client.prototype.close = function() {
+        return this.socket.disconnect();
       };
 
       return Client;
@@ -4471,7 +4475,10 @@ if (typeof define === "function" && define.amd) {
       }
 
       Command.prototype.execute = function(data, callback) {
-        data = this._doBeforeCallback(data);
+        var value;
+        if (value = this._doBeforeCallback(data)) {
+          data = value;
+        }
         return this.doExecute(data, callback);
       };
 
@@ -4581,7 +4588,11 @@ if (typeof define === "function" && define.amd) {
         }
         if (data == null) {
           data = {
-            room: this.channel.options.room
+            room: this.channel.room
+          };
+        } else {
+          data = {
+            room: data
           };
         }
         return this.sendCommand('join', data, callback);
@@ -4862,8 +4873,7 @@ if (typeof define === "function" && define.amd) {
 
 (function() {
   var __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   define('chat/channel',['core', 'chat/manager', 'util', 'event', 'exports'], function(Caramal, Manager, Util, Event, exports) {
     var Channel;
@@ -4971,14 +4981,24 @@ if (typeof define === "function" && define.amd) {
         if (this.hasOwnProperty(method)) {
           throw new Error("always has " + method + " property or function");
         }
-        return this[method] = function() {
-          var args, callback, data, last, options;
-          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-          last = args.splice(-1)[0];
-          if (Util.isFunc(last)) {
-            callback = last;
+        return this[method] = function(data, options, callback) {
+          if (data == null) {
+            data = null;
           }
-          data = args[0], options = args[1];
+          if (options == null) {
+            options = {};
+          }
+          if (callback == null) {
+            callback = null;
+          }
+          if (Util.isFunc(data)) {
+            callback = data;
+            data = null;
+            options = {};
+          } else if (Util.isFunc(options)) {
+            callback = options;
+            options = {};
+          }
           return _this.command(method, data, options, callback);
         };
       };
@@ -5305,7 +5325,7 @@ if (typeof define === "function" && define.amd) {
               channel = Chat.create(info.from, {
                 room: info.room
               });
-              channel.command('join');
+              channel.command('join', info.room);
               channel.setState('open');
               return Caramal.MessageManager.emit('channel:new', channel);
             }
@@ -5437,7 +5457,7 @@ if (typeof define === "function" && define.amd) {
               channel = Group.create(info.group, {
                 room: info.room
               });
-              channel.command('join');
+              channel.command('join', info.room);
               channel.setState('open');
               return Caramal.MessageManager.emit('channel:new', channel);
             }

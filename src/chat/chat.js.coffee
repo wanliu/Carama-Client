@@ -38,8 +38,6 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       @channel.setState('open')
       @channel.room = room
 
-      # Util.merge options, { type: 1, user: @channel.user }
-
     ###*
      * 单一用户聊天
      * @param  {String} login  用户登陆名
@@ -97,8 +95,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
           channel = Caramal.MessageManager.nameOfChannel(info.from)
           unless channel?
             channel = Chat.create(info.from, {room: info.room})
-            # channel = if channel? then channel else
-            channel.command('join')
+            channel.command('join', info.room)
             channel.setState('open')
             Caramal.MessageManager.emit('channel:new', channel)
         else
