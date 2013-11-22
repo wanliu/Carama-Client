@@ -97,22 +97,22 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * 接受到消息数据的回调
      * @param  {Function} message_callback 消息回调
     ###
-    onMessage: (@message_callback) ->
-      @on('message', @message_callback)
+    onMessage: (@message_callback, context) ->
+      @on('message', @message_callback, context)
 
     ###*
      * 来至服务端的命令回调
      * @param  {Function} command 命令对象
     ###
-    onCommand: (@command_callback) ->
-      @on('command', @command_callback)
+    onCommand: (@command_callback, context) ->
+      @on('command', @command_callback, context)
 
     ###*
      * 处发事件的回调
      * @param  {Function} event 事件对象
     ###
-    onEvent: (@event_callback) ->
-      @on('event', @event_callback)
+    onEvent: (@event_callback, context) ->
+      @on('event', @event_callback, context)
 
     ###*
      * 错误回调

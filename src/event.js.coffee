@@ -6,8 +6,8 @@ define ['util'], (Util) ->
       @_listeners = {}
 
 
-    addEventListener: (event, callback) ->
-
+    addEventListener: (event, callback, context) ->
+      callback.context = context
       unless (callbacks = @_listeners[event])?
         callbacks = @_listeners[event] = []
 
@@ -30,7 +30,7 @@ define ['util'], (Util) ->
       @on(event, callback)
 
 
-    on: (event, callback) ->
+    on: (event, callback, context) ->
       @addEventListener(event, callback)
 
     emit: (event, data) ->
@@ -38,7 +38,10 @@ define ['util'], (Util) ->
 
       for callback in callbacks
         if Util.isFunc(callback)
-          callback(data)
+          if callback.context?
+            callback.call(callback.context, data)
+          else
+            callback(data)
 
 
     send: (event, data) ->
