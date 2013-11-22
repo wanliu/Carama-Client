@@ -4619,9 +4619,9 @@ if (typeof define === "function" && define.amd) {
   define('event',['util'], function(Util) {
     var Event;
     return Event = (function() {
-      function Event() {}
-
-      Event.prototype._listeners = {};
+      function Event() {
+        this._listeners = {};
+      }
 
       Event.prototype.addEventListener = function(event, callback) {
         var callbacks;

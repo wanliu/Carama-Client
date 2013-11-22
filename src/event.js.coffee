@@ -2,7 +2,9 @@ define ['util'], (Util) ->
 
   class Event
 
-    _listeners: {}
+    constructor: () ->
+      @_listeners = {}
+
 
     addEventListener: (event, callback) ->
 
