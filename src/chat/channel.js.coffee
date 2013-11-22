@@ -33,6 +33,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     }
 
     constructor: (@options = {}) ->
+      super
       @id = Channel.nextId++
 
       ###*
@@ -181,6 +182,9 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       manager = options.manager || @default_manager
       manager.addChannel(Channel.nextId, new Channel(options))
 
+    @of: (id) ->
+      manager = options.manager || @default_manager
+      manager.ofChannel(id)
 
     @beforeCommand: (cmd, callback) ->
       @prototype.hooks["before_#{cmd}"] = {

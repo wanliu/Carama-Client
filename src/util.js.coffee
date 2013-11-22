@@ -28,8 +28,8 @@ define ['exports'], (exports) ->
   exports.merge = (target, other) ->
     for k, value of other
       if exports.isObject(value)
-        target[v] = {}
-        target[v] = exports.merge(target[v], value)
+        target[k] = {}
+        target[k] = exports.merge(target[k], value)
       else
         target[k] = value
 

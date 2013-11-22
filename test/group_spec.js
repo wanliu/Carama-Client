@@ -15,8 +15,8 @@ define(['caramal', 'chat'], function(Caramal) {
 
     // 打开一个会话， 会返回一个 rid
     it('open group', function(done){
-      group = Caramal.Group.create('chinese people');
-      group.open(function(){
+      group = Caramal.Group.of('chinese people');
+      group.open(function(group){
         group.room.should.not.be.empty;
         done();
       });
@@ -43,15 +43,18 @@ define(['caramal', 'chat'], function(Caramal) {
 
     it ('recevice message', function(done){
 
-      chat = Caramal.Chat.create('chinese people');
-      chat.open(function(){
-        chat.send('hello world');
+      group = Caramal.Group.of('chinese people');
+      group.open(function(group){
+        group.send('hello world');
+        console.log(group.room)
       })
 
-      chat.onMessage(function(msg){
+      group.onMessage(function(msg){
         msg.msg.should.eql('hello world');
         done();
       })
+
+      console.log(group._listeners);
     });
   });
 });

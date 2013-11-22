@@ -4393,8 +4393,8 @@ if (typeof define === "function" && define.amd) {
       for (k in other) {
         value = other[k];
         if (exports.isObject(value)) {
-          target[v] = {};
-          target[v] = exports.merge(target[v], value);
+          target[k] = {};
+          target[k] = exports.merge(target[k], value);
         } else {
           target[k] = value;
         }
@@ -4489,31 +4489,31 @@ if (typeof define === "function" && define.amd) {
         this.return_callback = return_callback;
       };
 
-      Command.prototype._doBeforeCallback = function(data) {
+      Command.prototype._doBeforeCallback = function(args) {
         if (Util.isFunc(this.before_callback)) {
-          if (!Util.isArray(data)) {
-            data = [data];
+          if (!Util.isArray(args)) {
+            args = [args];
           }
-          return this.before_callback.apply(this, data);
+          return this.before_callback.apply(this, args);
         }
       };
 
-      Command.prototype._doAfterCallback = function(data) {
+      Command.prototype._doAfterCallback = function(args) {
         if (Util.isFunc(this.after_callback)) {
-          if (!Util.isArray(data)) {
-            data = [data];
+          if (!Util.isArray(args)) {
+            args = [args];
           }
-          return this.after_callback.apply(this, data);
+          return this.after_callback.apply(this, args);
         }
       };
 
-      Command.prototype._doReturnCallback = function(data) {
+      Command.prototype._doReturnCallback = function(args) {
         if (Util.isFunc(this.return_callback)) {
-          this.return_callback(data);
-          if (!Util.isArray(data)) {
-            data = [data];
+          this.return_callback(args);
+          if (!Util.isArray(args)) {
+            args = [args];
           }
-          return this.return_callback.apply(this, data);
+          return this.return_callback.apply(this, args);
         }
       };
 
@@ -4534,6 +4534,7 @@ if (typeof define === "function" && define.amd) {
             return _this.onError(first);
           } else {
             _this._doAfterCallback(args);
+            args.unshift(_this.channel);
             if (Util.isFunc(callback)) {
               return callback.apply(_this, args);
             }
@@ -4906,6 +4907,7 @@ if (typeof define === "function" && define.amd) {
       function Channel(options) {
         var manager;
         this.options = options != null ? options : {};
+        Channel.__super__.constructor.apply(this, arguments);
         this.id = Channel.nextId++;
         /**
          * 消息缓存区
@@ -5129,6 +5131,12 @@ if (typeof define === "function" && define.amd) {
         return manager.addChannel(Channel.nextId, new Channel(options));
       };
 
+      Channel.of = function(id) {
+        var manager;
+        manager = options.manager || this.default_manager;
+        return manager.ofChannel(id);
+      };
+
       Channel.beforeCommand = function(cmd, callback) {
         return this.prototype.hooks["before_" + cmd] = {
           name: cmd,
@@ -5271,6 +5279,16 @@ if (typeof define === "function" && define.amd) {
         return manager.addNamedChannel(user, new Chat(user, options));
       };
 
+      Chat.of = function(user, options) {
+        var chat, manager;
+        if (options == null) {
+          options = {};
+        }
+        manager = options.manager || this.default_manager;
+        chat = manager.nameOfChannel(user);
+        return chat || this.create(user, options);
+      };
+
       return Chat;
 
     })(Channel);
@@ -5282,12 +5300,15 @@ if (typeof define === "function" && define.amd) {
       switch (info.action) {
         case 'join':
           if (info.type === Channel.TYPES['chat']) {
-            channel = Caramal.MessageManager.roomOfChannel(info.room);
-            channel = channel != null ? channel : Chat.create(info.from, {
-              room: info.room
-            });
-            channel.command('join');
-            return Caramal.MessageManager.emit('channel:new', channel);
+            channel = Caramal.MessageManager.nameOfChannel(info.from);
+            if (channel == null) {
+              channel = Chat.create(info.from, {
+                room: info.room
+              });
+              channel.command('join');
+              channel.setState('open');
+              return Caramal.MessageManager.emit('channel:new', channel);
+            }
           } else {
             return next();
           }
@@ -5340,6 +5361,7 @@ if (typeof define === "function" && define.amd) {
         if (options == null) {
           options = {};
         }
+        this.channel.setState('opening');
         return Util.merge(options, {
           type: this.channel.type,
           group: this.channel.group
@@ -5347,6 +5369,7 @@ if (typeof define === "function" && define.amd) {
       });
 
       Group.afterCommand('open', function(ret, room) {
+        this.channel.setState('open');
         return this.channel.room = room;
       });
 
@@ -5388,6 +5411,16 @@ if (typeof define === "function" && define.amd) {
         return manager.addNamedChannel(group, new Group(group, options));
       };
 
+      Group.of = function(group, options) {
+        var manager;
+        if (options == null) {
+          options = {};
+        }
+        manager = options.manager || this.default_manager;
+        group = manager.nameOfChannel(group);
+        return group || this.create(group, options);
+      };
+
       return Group;
 
     })(Channel);
@@ -5399,14 +5432,14 @@ if (typeof define === "function" && define.amd) {
       switch (info.action) {
         case 'join':
           if (info.type === Channel.TYPES['group']) {
-            channel = Caramal.MessageManager.roomOfChannel(info.room);
-            if (info.group != null) {
-              channel = channel != null ? channel : Group.create(info.group, {
+            channel = Caramal.MessageManager.nameOfChannel(info.group);
+            if (channel == null) {
+              channel = Group.create(info.group, {
                 room: info.room
               });
-              return channel.command('join');
-            } else {
-              return next();
+              channel.command('join');
+              channel.setState('open');
+              return Caramal.MessageManager.emit('channel:new', channel);
             }
           } else {
             return next();

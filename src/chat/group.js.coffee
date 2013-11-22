@@ -11,9 +11,11 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
     type: Channel.TYPES['group']
 
     @beforeCommand 'open', (options = {}) ->
+      @channel.setState('opening')
       Util.merge options, { type: @channel.type, group: @channel.group }
 
     @afterCommand 'open', (ret, room) ->
+      @channel.setState('open')
       @channel.room = room
 
     constructor: (@group, @options) ->
@@ -40,6 +42,12 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
       manager = options.manager || @default_manager
       manager.addNamedChannel(group, new Group(group, options))
 
+    @of: (group, options = {}) ->
+      manager = options.manager || @default_manager
+      group = manager.nameOfChannel(group)
+      group || @create(group, options)
+
+
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
 
     if info.type == Channel.TYPES['group']
@@ -48,12 +56,14 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
     switch info.action
       when 'join'
         if info.type == Channel.TYPES['group']
-          channel = Caramal.MessageManager.roomOfChannel(info.room)
-          if info.group?
-            channel = if channel? then channel else Group.create(info.group, {room: info.room})
+          channel = Caramal.MessageManager.nameOfChannel(info.group)
+
+          unless channel?
+            channel = Group.create(info.group, {room: info.room})
+
             channel.command('join')
-          else
-            next()
+            channel.setState('open')
+            Caramal.MessageManager.emit('channel:new', channel)
         else
           next()
       else

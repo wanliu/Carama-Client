@@ -39,26 +39,26 @@ define ['core', 'util'], (Caramal, Util) ->
 
     onReturnExecute: (@return_callback) ->
 
-    _doBeforeCallback: (data) ->
+    _doBeforeCallback: (args) ->
       if Util.isFunc(@before_callback)
-        data = [data] unless Util.isArray(data)
+        args = [args] unless Util.isArray(args)
 
-        @before_callback.apply(@, data)
+        @before_callback.apply(@, args)
 
-    _doAfterCallback: (data) ->
+    _doAfterCallback: (args) ->
 
       if Util.isFunc(@after_callback)
-        data = [data] unless Util.isArray(data)
+        args = [args] unless Util.isArray(args)
 
-        @after_callback.apply(@, data)
+        @after_callback.apply(@, args)
 
-    _doReturnCallback: (data) ->
+    _doReturnCallback: (args) ->
       if Util.isFunc(@return_callback)
-        @return_callback(data)
+        @return_callback(args)
 
-        data = [data] unless Util.isArray(data)
+        args = [args] unless Util.isArray(args)
 
-        @return_callback.apply(@, data)
+        @return_callback.apply(@, args)
 
     sendCommand: (cmd, data = {}, callback ) ->
       send_data = Util.merge {
@@ -70,6 +70,7 @@ define ['core', 'util'], (Caramal, Util) ->
           @onError(first)
         else
           @_doAfterCallback(args)
+          args.unshift(@channel)
           callback.apply(@,args) if Util.isFunc(callback)
 
     onError: (msg) ->

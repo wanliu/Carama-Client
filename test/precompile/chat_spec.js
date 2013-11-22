@@ -14,8 +14,8 @@ describe('Caramal Chat test ', function(done){
 
   // 打开一个会话， 会返回一个 rid
   it('open chat', function(done){
-    chat = Caramal.Chat.create('hysios')
-    chat.open(function(){
+    chat = Caramal.Chat.of('hysios')
+    chat.open(function(chat){
       chat.room.should.not.be.empty;
       done();
     });
@@ -42,8 +42,8 @@ describe('Caramal Chat test ', function(done){
 
   it ('recevice message', function(done){
 
-    chat = Caramal.Chat.create('hysios');
-    chat.open(function(){
+    chat = Caramal.Chat.of('hysios');
+    chat.open(function(chat){
       chat.send('hello world');
     })
 
@@ -55,9 +55,9 @@ describe('Caramal Chat test ', function(done){
 
   it ('recevice a notice', function(done){
 
-    chat = Caramal.Chat.create('hysios');
+    chat = Caramal.Chat.of('hysios');
 
-    chat.open(function(){
+    chat.open(function(chat){
       client.emit('remote', JSON.stringify({
         user: 'hysios',
         action: 'notice',
