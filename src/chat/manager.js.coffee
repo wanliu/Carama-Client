@@ -27,6 +27,7 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
   class ClientMessageManager extends Event
 
     constructor: (@client) ->
+      super
       @message_dispatchs = {}
       @return_commands = {}
       @channels = {}

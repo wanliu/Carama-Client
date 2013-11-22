@@ -4735,6 +4735,7 @@ if (typeof define === "function" && define.amd) {
 
       function ClientMessageManager(client) {
         this.client = client;
+        ClientMessageManager.__super__.constructor.apply(this, arguments);
         this.message_dispatchs = {};
         this.return_commands = {};
         this.channels = {};
