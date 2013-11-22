@@ -46,7 +46,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
        * 频道状态
        * @type {String}
       ###
-      @state = 'inactive'
+      @_state = 'inactive'
+      @_active = false
 
       manager = @options.manager || @constructor.default_manager
       @setOptions(@options)
@@ -63,10 +64,10 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       for name, opt of options
         @[name] = opt
 
-    setState: (@state) ->
+    setState: (@_state) ->
 
     getState: () ->
-      @state
+      @_state
 
     bindSocket: (@socket) ->
 
@@ -131,17 +132,17 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * 激活频道，为了处理用户空闲，离开与消息通知等功能， 在用户进入输入时，实际上会自动调用
     ###
     active: () ->
-      @active = true
+      @_active = true
 
     ###*
      * 反激活频道，使频道进入无人状态，消息会到来，会由 OnMessage 处发变成 OnDeactiveMessage 处发
     ###
     deactive: () ->
-      @active = false
+      @_active = false
 
 
     isActive: () ->
-      @active
+      @_active
 
     ###*
      * 发送消息

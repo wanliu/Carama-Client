@@ -4348,6 +4348,10 @@ if (typeof define === "function" && define.amd) {
         return this.values[name];
       };
 
+      Client.prototype.reconnect = function() {
+        return this.socket.socket.reconnect();
+      };
+
       Client.prototype.close = function() {
         return this.socket.disconnect();
       };
