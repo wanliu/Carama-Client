@@ -4639,26 +4639,32 @@ if (typeof define === "function" && define.amd) {
     return Event = (function() {
       function Event() {
         this._listeners = {};
+        this._contexts = {};
       }
 
       Event.prototype.addEventListener = function(event, callback, context) {
-        var callbacks;
-        callback.context = context;
+        var callbacks, contexts;
         if ((callbacks = this._listeners[event]) == null) {
           callbacks = this._listeners[event] = [];
         }
+        if ((contexts = this._contexts[event]) == null) {
+          contexts = this._contexts[event] = [];
+        }
         if (Util.isArray(callbacks)) {
-          return callbacks.push(callback);
+          callbacks.push(callback);
+          return contexts.push(context);
         }
       };
 
       Event.prototype.removeEventListener = function(event, callback) {
-        var callbacks, cb, i, _i, _len;
+        var callbacks, cb, contexts, i, _i, _len;
         callbacks = this._listeners[event];
+        contexts = this._contexts[event];
         if ((callbacks != null) && Util.isArray(callbacks)) {
           for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
             cb = callbacks[i];
             if (Util.isFunc(cb) && callback === cb) {
+              contexts.splice(i, 1);
               return callbacks.splice(i, 1)[0];
             }
           }
@@ -4683,15 +4689,17 @@ if (typeof define === "function" && define.amd) {
       };
 
       Event.prototype.emit = function() {
-        var args, callback, callbacks, event, _i, _len, _results;
+        var args, callback, callbacks, context, contexts, event, i, _i, _len, _results;
         event = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
         callbacks = this._listeners[event] || [];
+        contexts = this._contexts[event] || [];
         _results = [];
-        for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
-          callback = callbacks[_i];
+        for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
+          callback = callbacks[i];
           if (Util.isFunc(callback)) {
-            if (callback.context != null) {
-              _results.push(callback.apply(callback.context, args));
+            context = contexts[i];
+            if (context != null) {
+              _results.push(callback.apply(context, args));
             } else {
               _results.push(this.call_mulit_args(callback, args));
             }
