@@ -31,7 +31,7 @@ define ['util'], (Util) ->
 
 
     on: (event, callback, context) ->
-      @addEventListener(event, callback)
+      @addEventListener(event, callback, context)
 
     emit: (event, args...) ->
       callbacks = @_listeners[event] || []
@@ -39,7 +39,7 @@ define ['util'], (Util) ->
       for callback in callbacks
         if Util.isFunc(callback)
           if callback.context?
-            callback.call(callback.context, args)
+            callback.apply(callback.context, args)
           else
             @call_mulit_args(callback, args)
 

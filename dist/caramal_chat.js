@@ -4679,7 +4679,7 @@ if (typeof define === "function" && define.amd) {
       };
 
       Event.prototype.on = function(event, callback, context) {
-        return this.addEventListener(event, callback);
+        return this.addEventListener(event, callback, context);
       };
 
       Event.prototype.emit = function() {
@@ -4691,7 +4691,7 @@ if (typeof define === "function" && define.amd) {
           callback = callbacks[_i];
           if (Util.isFunc(callback)) {
             if (callback.context != null) {
-              _results.push(callback.call(callback.context, args));
+              _results.push(callback.apply(callback.context, args));
             } else {
               _results.push(this.call_mulit_args(callback, args));
             }

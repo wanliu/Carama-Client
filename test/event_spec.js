@@ -45,6 +45,21 @@ define(['event'], function(Event){
       event.emit('with_context', 'hi')
     });
 
+    it ("call callback with context use on", function(done) {
+
+      data = {
+        msg: 'hi'
+      }
+
+      event.on('with_context', function() {
+        this.msg.should.eql('hi');
+        done();
+      }, data);
+
+
+      event.emit('with_context', 'hi')
+    });
+
   });
 
 });
