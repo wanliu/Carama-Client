@@ -4632,6 +4632,8 @@ if (typeof define === "function" && define.amd) {
 }).call(this);
 
 (function() {
+  var __slice = [].slice;
+
   define('event',['util'], function(Util) {
     var Event;
     return Event = (function() {
@@ -4680,23 +4682,40 @@ if (typeof define === "function" && define.amd) {
         return this.addEventListener(event, callback);
       };
 
-      Event.prototype.emit = function(event, data) {
-        var callback, callbacks, _i, _len, _results;
+      Event.prototype.emit = function() {
+        var args, callback, callbacks, event, _i, _len, _results;
+        event = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
         callbacks = this._listeners[event] || [];
         _results = [];
         for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
           callback = callbacks[_i];
           if (Util.isFunc(callback)) {
             if (callback.context != null) {
-              _results.push(callback.call(callback.context, data));
+              _results.push(callback.call(callback.context, args));
             } else {
-              _results.push(callback(data));
+              _results.push(this.call_mulit_args(callback, args));
             }
           } else {
             _results.push(void 0);
           }
         }
         return _results;
+      };
+
+      Event.prototype.call_mulit_args = function(callback, args) {
+        if (args.length > 4) {
+          return callback(args[0], args[1], args[2], args[3], args[4]);
+        } else if (args.length > 3) {
+          return callback(args[0], args[1], args[2], args[3]);
+        } else if (args.length > 2) {
+          return callback(args[0], args[1], args[2]);
+        } else if (args.length > 1) {
+          return callback(args[0], args[1]);
+        } else if (args.length > 0) {
+          return callback(args[0]);
+        } else {
+          return callback();
+        }
       };
 
       Event.prototype.send = function(event, data) {};
