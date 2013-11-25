@@ -1,5 +1,9 @@
 define ['exports'], (exports) ->
 
+  unless Date.now?
+    Date.now = () ->
+      (new Date()).valueOf()
+
   exports.isFunc = (object) ->
     typeof object == 'function'
 
