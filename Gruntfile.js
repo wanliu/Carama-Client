@@ -114,7 +114,7 @@ module.exports = function(grunt) {
           include: ['chat'],
           out: 'dist/caramal_chat.js',
           wrap: {
-            end: "  return require('chat');}));"
+            end: " return { Caramal: require('chat'), io: require('socket.io')};}));"
           }
         }
       }

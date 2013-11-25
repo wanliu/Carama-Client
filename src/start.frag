@@ -8,6 +8,8 @@
     } else {
         //Browser globals case. Just assign the
         //result to a property on the global.
-        root.Caramal = factory();
+        f = factory()
+        root.Caramal = f['Caramal'];
+        root.io = f['io'];
     }
 }(this, function () {
