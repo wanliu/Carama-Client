@@ -1,4 +1,4 @@
-define ['core', 'exports'], (Caramal, exports) ->
+define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
 
   class Dispatchers
 
@@ -20,13 +20,14 @@ define ['core', 'exports'], (Caramal, exports) ->
         do_next
 
       for dispatch in @dispatch_queue
-        if chunk_call(dispatch)
+        unless chunk_call(dispatch)
           break
 
 
-  class ClientMessageManager
+  class ClientMessageManager extends Event
 
     constructor: (@client) ->
+      super
       @message_dispatchs = {}
       @return_commands = {}
       @channels = {}
@@ -104,7 +105,7 @@ define ['core', 'exports'], (Caramal, exports) ->
 
     roomOfChannel: (room) ->
       for id, chn of @channels
-        if chn.options && chn.options.room == room
+        if chn.room == room
           return chn
       null
 

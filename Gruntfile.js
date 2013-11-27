@@ -20,7 +20,7 @@ module.exports = function(grunt) {
         src: 'Gruntfile.js'
       },
       dist: {
-        src: [ 'src/**/*.js', '!src/vendor/**/*.js' ]
+        src: [ 'src/**/*.js', '!src/vendor/**/*.js', '!src/almond.js' ]
       }
     },
     browserify: {
@@ -88,12 +88,34 @@ module.exports = function(grunt) {
       }
     },
     requirejs: {
-      compile: {
+      // compile: {
+      //   options: {
+      //     baseUrl: './compile',
+      //     name: 'almond',
+      //     mainConfigFile: 'require.js',
+      //     out: 'dist/caramal_chat.js',
+      //     include: ['chat']
+      //   }
+      // },
+      caramal: {
         options: {
           baseUrl: './compile',
-          name: 'caramal',
+          name: 'almond',
           mainConfigFile: 'require.js',
-          out: 'dist/client.js',
+          include: ['caramal'],
+          out: 'dist/caramal_client.js',
+        }
+      },
+      chat: {
+        options: {
+          baseUrl: './compile',
+          name: 'almond',
+          mainConfigFile: 'require.js',
+          include: ['chat'],
+          out: 'dist/caramal_chat.js',
+          wrap: {
+            end: " return { Caramal: require('chat'), io: require('socket.io')};}));"
+          }
         }
       }
     },
@@ -122,6 +144,12 @@ module.exports = function(grunt) {
           configFile: 'karma.conf.js',
           // files: ['test/spec/**/*_spec.js']
         }
+      },
+      precompile: {
+        options: {
+          configFile: 'karma.precompile.conf.js',
+          // files: ['test/spec/**/*_spec.js']
+        }
       }
     },
     clean: {
@@ -144,8 +172,17 @@ module.exports = function(grunt) {
     'build',
     'test:chat_server',
     'connect:test',
-    'karma'
+    'karma:unit'
   ]);
+
+  grunt.registerTask('test:precompile', [
+    'coffee',
+    'build',
+    'test:chat_server',
+    'connect:test',
+    'karma:precompile'
+  ]);
+
 
   grunt.registerTask('test:chat_server', function(target) {
     var spawn = require('child_process').spawn,

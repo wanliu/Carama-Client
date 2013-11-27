@@ -1,5 +1,9 @@
 define ['exports'], (exports) ->
 
+  unless Date.now?
+    Date.now = () ->
+      (new Date()).valueOf()
+
   exports.isFunc = (object) ->
     typeof object == 'function'
 
@@ -28,8 +32,8 @@ define ['exports'], (exports) ->
   exports.merge = (target, other) ->
     for k, value of other
       if exports.isObject(value)
-        target[v] = {}
-        target[v] = exports.merge(target[v], value)
+        target[k] = {}
+        target[k] = exports.merge(target[k], value)
       else
         target[k] = value
 
@@ -40,6 +44,11 @@ define ['exports'], (exports) ->
   String.prototype.toTitleCase = () ->
     @replace /\w\S*/g, (txt) ->
       txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+
+  String.prototype.toCamelCase = () ->
+    @replace /(^\w|[-\_]\w)/g, (match) ->
+      match = if match[0] == '_' || match[0] == '-' then match[1] else match
+      match.toUpperCase() 
 
   Array.prototype.contain = (member) ->
 

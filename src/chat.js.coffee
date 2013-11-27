@@ -1,4 +1,4 @@
-define ['core',
+define ['caramal',
   'chat/command',
   'chat/channel',
   'chat/chat',
@@ -17,3 +17,4 @@ define ['core',
     Caramal.Chat = Chat
     Caramal.Group = Group
     Caramal.ClientMessageManager = ClientMessageManager
+    Caramal

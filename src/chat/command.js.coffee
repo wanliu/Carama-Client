@@ -27,7 +27,7 @@ define ['core', 'util'], (Caramal, Util) ->
       @option = new CommandOption(@options)
 
     execute: (data, callback) ->
-      data = @_doBeforeCallback(data)
+      data = value if value = @_doBeforeCallback(data)
       @doExecute(data, callback)
 
     doExecute: (data, callback) ->
@@ -39,25 +39,43 @@ define ['core', 'util'], (Caramal, Util) ->
 
     onReturnExecute: (@return_callback) ->
 
-    _doBeforeCallback: (data) ->
+    _doBeforeCallback: (args) ->
       if Util.isFunc(@before_callback)
-        @before_callback(data)
+        args = [args] unless Util.isArray(args)
 
-    _doAfterCallback: (data) ->
+        @before_callback.apply(@, args)
+
+    _doAfterCallback: (args) ->
+
       if Util.isFunc(@after_callback)
-        @after_callback(data)
+        args = [args] unless Util.isArray(args)
 
-    _doReturnCallback: (data) ->
+        @after_callback.apply(@, args)
+
+    _doReturnCallback: (args) ->
       if Util.isFunc(@return_callback)
-        @return_callback(data)
+        @return_callback(args)
+
+        args = [args] unless Util.isArray(args)
+
+        @return_callback.apply(@, args)
 
     sendCommand: (cmd, data = {}, callback ) ->
       send_data = Util.merge {
                     command_id: @option.id,
                   }, data
-      @socket.emit cmd, send_data, (ret) =>
-        @_doAfterCallback(ret)
-        callback(ret) if Util.isFunc(callback)
+
+      @socket.emit cmd, send_data, (args...) =>
+        first = args[0]
+        if Util.isObject(first) and first.error?
+          @onError(first)
+        else
+          @_doAfterCallback(args)
+          args.unshift(@channel)
+          callback.apply(@,args) if Util.isFunc(callback)
+
+    onError: (msg) ->
+      @channel.emit('error', msg)
 
   class OpenCommand extends Command
 
@@ -68,15 +86,42 @@ define ['core', 'util'], (Caramal, Util) ->
 
     doExecute: (data, callback = null) ->
       unless data?
-        data = {room: @channel.options.room }
+        data = {room: @channel.room }
+      else
+        data = {room: data}
+
       @sendCommand 'join', data, callback
 
   class CloseCommand extends Command
 
     doExecute: (data, callback = null) ->
       @sendCommand 'leave', data, callback
+ 
+  class RecordCommand extends Command
+
+    doExecute: (data, callback = null) ->
+      data = {room: @channel.room }
+      @sendCommand 'record', data, callback
+
+  class StopRecordCommand extends Command
+
+    doExecute: (data, callback = null) ->
+      data = {room: @channel.room }
+      @sendCommand 'stop_record', data, callback
+
+
+  class HistoryCommand extends Command
+
+    doExecute: (data, callback = null) ->
+      data = { room: @channel.room , start: data.start, step: data.step || 10, type: 'index' }
+
+      @sendCommand 'history', data, callback
 
   Caramal.Command = Command
   Caramal.OpenCommand = OpenCommand
   Caramal.JoinCommand = JoinCommand
   Caramal.CloseCommand = CloseCommand
+  Caramal.RecordCommand = RecordCommand
+  Caramal.StopRecordCommand = StopRecordCommand
+  Caramal.HistoryCommand = HistoryCommand
+
