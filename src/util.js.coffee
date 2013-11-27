@@ -45,6 +45,11 @@ define ['exports'], (exports) ->
     @replace /\w\S*/g, (txt) ->
       txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
 
+  String.prototype.toCamelCase = () ->
+    @replace /(^\w|[-\_]\w)/g, (match) ->
+      match = if match[0] == '_' || match[0] == '-' then match[1] else match
+      match.toUpperCase() 
+
   Array.prototype.contain = (member) ->
 
     for e in @

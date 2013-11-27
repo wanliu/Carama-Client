@@ -160,7 +160,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       return unless @commands.contain(cmd)
 
-      class_name = "#{cmd.toTitleCase()}Command"
+      class_name = "#{cmd.toCamelCase()}Command"
       klass = Caramal[class_name]
       throw new Error("not have Caramal.#{class_name} class") unless klass?
 

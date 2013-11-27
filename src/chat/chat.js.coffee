@@ -23,7 +23,10 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
     commands: [
       'open',
-      'join'
+      'join',
+      'record',
+      'stop_record',
+      'history'
     ]
 
     hooks: {}

@@ -95,8 +95,32 @@ define ['core', 'util'], (Caramal, Util) ->
 
     doExecute: (data, callback = null) ->
       @sendCommand 'leave', data, callback
+ 
+  class RecordCommand extends Command
+
+    doExecute: (data, callback = null) ->
+      data = {room: @channel.room }
+      @sendCommand 'record', data, callback
+
+  class StopRecordCommand extends Command
+
+    doExecute: (data, callback = null) ->
+      data = {room: @channel.room }
+      @sendCommand 'stop_record', data, callback
+
+
+  class HistoryCommand extends Command
+
+    doExecute: (data, callback = null) ->
+      data = { room: @channel.room , start: data.start, step: data.step || 10, type: 'index' }
+
+      @sendCommand 'history', data, callback
 
   Caramal.Command = Command
   Caramal.OpenCommand = OpenCommand
   Caramal.JoinCommand = JoinCommand
   Caramal.CloseCommand = CloseCommand
+  Caramal.RecordCommand = RecordCommand
+  Caramal.StopRecordCommand = StopRecordCommand
+  Caramal.HistoryCommand = HistoryCommand
+
