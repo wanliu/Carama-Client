@@ -45,12 +45,12 @@ define(['caramal', 'chat'], function(Caramal) {
     it ('wait join chat', function(done){
       // var channels = Caramal.MessageManager.channels,
       //     length = Object.keys(channels).length;
-      client.emit('remote', JSON.stringify({
+      client.emit('remote', {
         action: 'join',
         type: 1,
         room: '123412341234',
         from: 'hyysios',
-      }));
+      });
 
       client.on('message', function(info){
         chat = Caramal.MessageManager.nameOfChannel('hyysios');
@@ -78,12 +78,12 @@ define(['caramal', 'chat'], function(Caramal) {
       chat = Caramal.Chat.of('hysios');
 
       chat.open(function(chat){
-        client.emit('remote', JSON.stringify({
+        client.emit('remote', {
           user: 'hysios',
           action: 'notice',
           room: chat.room,
           type: 3
-        }));
+        });
         // chat.being_input()
       })
 

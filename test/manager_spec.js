@@ -15,12 +15,12 @@ define(['caramal', 'chat/manager' ], function(Caramal, ClientMessageManager) {
 
       it('on channel:new event', function(done){
 
-        client.emit('remote', JSON.stringify({
+        client.emit('remote', {
           action: 'join',
           type: 1,
           room: '123412341234',
           from: 'hyysios',
-        }));
+        });
 
         Caramal.MessageManager.on('channel:new', function(channel){
           channel.room.should.eql('123412341234');

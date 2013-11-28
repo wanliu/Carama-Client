@@ -31,7 +31,7 @@ io.on('connection', function (socket) {
 
   socket.on('message', function(msg){
     try {
-      var info = JSON.parse(msg);
+      var info = msg;
       console.log('onMessage:', msg);
     } catch (e) {
       console.log('Error:', e.message)
@@ -40,27 +40,27 @@ io.on('connection', function (socket) {
 
   socket.on('open', function(data, callback){
     try {
-      var info = JSON.parse(data);
+      var info = data;
       console.log('open command:', info)
       switch(info.type) {
       case 0:
         break;
       case 1:
         room = generateId();
-        io.sockets.emit('message', JSON.stringify({
+        io.sockets.emit('message', {
           action: 'join',
           room: room,
           from: current_user,
-          type: info.type }))
+          type: info.type })
         callback(null, room);
         break;
       case 2:
         room = generateId();
-        io.sockets.emit('message', JSON.stringify({
+        io.sockets.emit('message', {
           action: 'join',
           room: room,
           group: info.group,
-          type: info.type }))
+          type: info.type })
         callback(null, room);
         break;
       }
@@ -72,9 +72,9 @@ io.on('connection', function (socket) {
 
   socket.on('remote', function(data, callback){
     try {
-      var info = JSON.parse(data);
+      var info = data;
       console.log('remote:', info);
-      socket.emit('message', JSON.stringify(info));
+      socket.emit('message', info);
     } catch (e) {
       console.log(e.message)
     }
@@ -83,7 +83,7 @@ io.on('connection', function (socket) {
   socket.on('join', function(data, callback){
     try {
       console.log('join:', data);
-      var info = JSON.parse(data);
+      var info = data;
       socket.join(info.room)
     } catch (e) {
       console.log(e.message)
@@ -93,12 +93,12 @@ io.on('connection', function (socket) {
 
   socket.on('chat', function(data){
     try {
-      var info = JSON.parse(data);
-      msg = JSON.stringify(info);
+      var info = data;
+      msg = info;
       for (var id in user_sockets) {
         var socket = user_sockets[id];
 
-        socket.emit('chat', JSON.stringify(info));
+        socket.emit('chat',info);
       }
     } catch (e) {
       console.log(e.message)
@@ -107,7 +107,7 @@ io.on('connection', function (socket) {
 
   socket.on('being_input', function(data){
     try {
-      var info = JSON.parse(data);
+      var info = data;
 
       var room = info.room,
         info = {
@@ -118,7 +118,7 @@ io.on('connection', function (socket) {
         };
       console.log('still inputing');
 
-      socket.broadcast.to(info.room).emit('message', JSON.stringify(info));
+      socket.broadcast.to(info.room).emit('message', info);
     } catch (e) {
       console.log(e.message)
     }

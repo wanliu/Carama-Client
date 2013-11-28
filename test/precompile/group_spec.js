@@ -25,12 +25,12 @@ describe('Caramal Group test ', function(done){
   it ('wait join group', function(done){
     // var channels = Caramal.MessageManager.channels,
     //     length = Object.keys(channels).length;
-    client.emit('remote', JSON.stringify({
+    client.emit('remote', {
       action: 'join',
       type: 2,
       group: 'hunan people',
       room: '483848343434',
-    }));
+    });
 
     client.on('message', function(info){
       group = Caramal.MessageManager.nameOfChannel('hunan people');
