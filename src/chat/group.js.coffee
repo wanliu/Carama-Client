@@ -44,8 +44,8 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @of: (group, options = {}) ->
       manager = options.manager || @default_manager
-      group = manager.nameOfChannel(group)
-      group || @create(group, options)
+      channel = manager.nameOfChannel(group)
+      channel || @create(group, options)
 
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
