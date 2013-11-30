@@ -50,7 +50,6 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
             @dispatch_process('event', info)
           else
             @dispatch_process('command', info)
-
         catch e
           @onError(e)
 
@@ -61,20 +60,22 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
       dispatch = @message_dispatchs[name]
       if dispatch?
         try
-          info = if typeof data == 'string'
-                   JSON.parse data
-                 else if typeof data == 'object'
-                   data
-                 else
-                   throw new Error 'invalid data type'
-
+          info = @parseJSON(data)
           dispatch.process(info)
         catch e
           @onError(e)
 
-    isEventMessage: (info) ->
-      info.action == 'notice'
+    parseJSON: (data) ->
+      if typeof data == 'string'
+        JSON.parse data
+      else if typeof data == 'object'
+        data
+      else
+        throw new Error 'invalid data type'
 
+    isEventMessage: (data) ->
+      info = @parseJSON(data)
+      info.action == 'notice'
 
     unBind: () ->
       if @client?

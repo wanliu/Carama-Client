@@ -25,8 +25,8 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       'open',
       'join',
       'record',
-      'stop_record',
-      'history'
+      'history',
+      'stop_record'
     ]
 
     hooks: {}
@@ -126,8 +126,4 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
 
   exports.Chat = Chat
-
-
-
-
 

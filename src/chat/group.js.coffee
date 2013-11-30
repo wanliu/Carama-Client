@@ -3,7 +3,10 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
   class Group extends Channel
     commands: [
       'open',
-      'join'
+      'join',
+      'record',
+      'history',
+      'stop_record'
     ]
 
     hooks: {}
@@ -69,9 +72,4 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
         next()
 
   exports.Group = Group
-
-
-
-
-
 
