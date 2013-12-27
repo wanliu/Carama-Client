@@ -52,13 +52,14 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
-
-    if info.type == Channel.TYPES['group']
+    
+    types = [ Channel.TYPES['group'], Channel.TYPES['temporary'] ]
+    if types.contain(info.type)
       Caramal.log('Receive Comamnd:', info)
 
     switch info.action
       when 'join'
-        if info.type == Channel.TYPES['group']
+        if types.contain(info.type)
           channel = Caramal.MessageManager.nameOfChannel(info.group)
 
           unless channel?
