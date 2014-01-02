@@ -63,6 +63,15 @@ io.on('connection', function (socket) {
           type: info.type })
         callback(null, room);
         break;
+      case 3:
+        room = generateId();
+        io.sockets.emit('message', {
+          action: 'join',
+          room: room,
+          group: info.group,
+          type: info.type })
+        callback(null, room);
+        break;
       }
     } catch (e) {
       console.log(e.message)
