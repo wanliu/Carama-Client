@@ -94,7 +94,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       when 'join'
         if info.type == Channel.TYPES['chat']
           channel = Caramal.MessageManager.nameOfChannel(info.from)
-          unless channel?
+          unless channel? && channel.room is info.room
             channel = Chat.create(info.from, {room: info.room})
             channel.command('join', info.room)
             channel.setState('open')
