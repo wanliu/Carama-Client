@@ -16,6 +16,12 @@ define ['socket.io', 'core'], (io, Caramal) ->
     unsubscribe: (channel, callback) ->
       @socket.removeListener(channel, callback);
 
+    onNotify: (channel, callback) ->
+      @subscribe("notify:#{channel}", callback)
+
+    unNotify: (channel, callback) ->
+      @unsubscribe("notify:#{channel}", callback)
+
     emit: (event, data, callback) ->
       @socket.emit(event, data, callback)
 

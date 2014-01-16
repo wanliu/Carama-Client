@@ -25,8 +25,8 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       'open',
       'join',
       'record',
-      'stop_record',
-      'history'
+      'history',
+      'stop_record'
     ]
 
     hooks: {}
@@ -66,10 +66,10 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
       @socket.emit('chat', msg)
 
     ###*
-     * 暂时离开的通知
+     * 切换在线状态的通知
     ###
-    afk: () ->
-      @socket.emit('afk', {room: @room })
+    online_state: (state = 'online') ->
+      @socket.emit('online-state', {room: @room, state: state })
 
     ###*
      * 正在输入的功能
@@ -126,8 +126,4 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
 
   exports.Chat = Chat
-
-
-
-
 

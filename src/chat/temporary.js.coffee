@@ -1,6 +1,6 @@
 define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Channel, Chat, Util, exports) ->
 
-  class Group extends Channel
+  class Temporary extends Channel
     commands: [
       'open',
       'join',
@@ -11,7 +11,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     hooks: {}
 
-    type: Channel.TYPES['group']
+    type: Channel.TYPES['temporary']
 
     @beforeCommand 'open', (options = {}) ->
       @channel.setState('opening')
@@ -43,7 +43,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @create: (group, options = {}) ->
       manager = options.manager || @default_manager
-      manager.addNamedChannel(group, new Group(group, options))
+      manager.addNamedChannel(group, new Temporary(group, options))
 
     @of: (group, options = {}) ->
       manager = options.manager || @default_manager
@@ -53,16 +53,16 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
     
-    if info.type is Channel.TYPES['group']
+    if info.type is Channel.TYPES['temporary']
       Caramal.log('Receive Comamnd:', info)
 
     switch info.action
       when 'join'
-        if info.type is Channel.TYPES['group']
+        if info.type is Channel.TYPES['temporary']
           channel = Caramal.MessageManager.nameOfChannel(info.group)
 
-          unless channel? && channel.room is info.room
-            channel = Group.create(info.group, {room: info.room})
+          unless channel?
+            channel = Temporary.create(info.group, {room: info.room})
             channel.command('join', info.room)
             channel.setState('open')
             Caramal.MessageManager.emit('channel:new', channel)
@@ -71,5 +71,5 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
       else
         next()
 
-  exports.Group = Group
+  exports.Temporary = Temporary
 

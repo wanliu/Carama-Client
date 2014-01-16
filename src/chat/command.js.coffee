@@ -122,6 +122,6 @@ define ['core', 'util'], (Caramal, Util) ->
   Caramal.JoinCommand = JoinCommand
   Caramal.CloseCommand = CloseCommand
   Caramal.RecordCommand = RecordCommand
-  Caramal.StopRecordCommand = StopRecordCommand
   Caramal.HistoryCommand = HistoryCommand
+  Caramal.StopRecordCommand = StopRecordCommand
 

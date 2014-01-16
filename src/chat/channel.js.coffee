@@ -29,7 +29,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     @TYPES = {
       normal: 0,
       chat: 1,
-      group: 2
+      group: 2,
+      temporary: 3
     }
 
     constructor: (@options = {}) ->
