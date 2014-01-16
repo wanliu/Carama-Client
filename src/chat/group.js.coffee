@@ -61,11 +61,33 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
         if info.type is Channel.TYPES['group']
           channel = Caramal.MessageManager.nameOfChannel(info.group)
 
-          unless channel? && channel.room is info.room
-            channel = Group.create(info.group, {room: info.room})
-            channel.command('join', info.room)
-            channel.setState('open')
-            Caramal.MessageManager.emit('channel:new', channel)
+          # unless channel? && channel.room is info.room
+          #   channel = Group.create(info.group, {room: info.room})
+          #   channel.command('join', info.room, (err, msg) ->
+          #     if err?
+          #       console.error('fails to join room! becouse of', err)
+          #     else
+          #       channel.setState('open')
+          #       Caramal.MessageManager.emit('channel:new', channel)
+          #   )
+          unless channel?
+            channel = Chat.create(info.from, {room: info.room})
+            channel.command('join', info.room, {}, (ch, err, msg) ->
+              if err?
+                console.error('fails to join room! becouse of', err)
+              else
+                channel.setState('open')
+                Caramal.MessageManager.emit('channel:new', channel)
+            )
+          else if channel.room isnt info.room # 断线重连，Caramal-Server重启
+            channel.command('join', info.room, {}, (ch, err, msg) ->
+              if err?
+                console.error('fails to join room! becouse of', err)
+              else
+                channel.room = info.room
+                channel.setState('open')
+                Caramal.MessageManager.emit('channel:new', channel)
+            )
         else
           next()
       else
