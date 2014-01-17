@@ -74,7 +74,8 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
               if err?
                 console.error('fails to join room! becouse of', err)
               else
-                channel.command('record', info.room)
+                if info.mode is 1   # 仅在mode为1时需要记录
+                  channel.command('record', info.room)
                 channel.room = info.room
                 channel.name = info.name
                 channel.setState('open')
