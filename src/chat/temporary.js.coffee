@@ -78,8 +78,8 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
                   channel.command('record', info.room)
                 channel.room = info.room
                 channel.name = info.name
-                channel.setState('open')
-                Caramal.MessageManager.emit('channel:new', channel)
+                # channel.setState('open')
+                # Caramal.MessageManager.emit('channel:new', channel)
             )
         else
           next()
