@@ -100,7 +100,12 @@ define ['core', 'util'], (Caramal, Util) ->
   class RecordCommand extends Command
 
     doExecute: (data, callback = null) ->
-      data = {room: @channel.room }
+      unless data?
+        data = { room: @channel.room }
+      else
+        room = if data.room then data.room else data
+        data = { room: room }
+
       @sendCommand 'record', data, callback
 
   class StopRecordCommand extends Command

@@ -108,6 +108,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
               if err?
                 console.error('fails to join room! becouse of', err)
               else
+                channel.command('record', info.room)
                 channel.room = info.room
                 channel.setState('open')
                 Caramal.MessageManager.emit('channel:new', channel)

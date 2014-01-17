@@ -15,7 +15,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @beforeCommand 'open', (options = {}) ->
       @channel.setState('opening')
-      Util.merge options, { type: @channel.type, group: @channel.group }
+      Util.merge options, { type: @channel.type, group: @channel.name }
 
     @afterCommand 'open', (ret, room) ->
       @channel.setState('open')
@@ -61,7 +61,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
         if info.type is Channel.TYPES['temporary']
           channel = Caramal.MessageManager.nameOfChannel(info.group)
           unless channel?
-            channel = Chat.create(info.from, {room: info.room})
+            channel = Temporary.create(info.group, {room: info.room, name: info.name})
             channel.command('join', info.room, {}, (ch, err, msg) ->
               if err?
                 console.error('fails to join room! becouse of', err)
@@ -74,7 +74,9 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
               if err?
                 console.error('fails to join room! becouse of', err)
               else
+                channel.command('record', info.room)
                 channel.room = info.room
+                channel.name = info.name
                 channel.setState('open')
                 Caramal.MessageManager.emit('channel:new', channel)
             )
