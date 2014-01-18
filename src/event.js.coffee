@@ -38,7 +38,12 @@ define ['util'], (Util) ->
 
 
     on: (event, callback, context) ->
-      @addEventListener(event, callback, context)
+      cb_string = callback.toString()
+      added = _.any(@_listeners[event], (handle) ->
+        handle.toString() is cb_string
+      )
+      unless added
+        @addEventListener(event, callback, context)
 
     emit: (event, args...) ->
       callbacks = @_listeners[event] || []
