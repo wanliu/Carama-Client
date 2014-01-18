@@ -1,4 +1,5 @@
-define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, Util, Event, exports) ->
+define ['core', 'chat/manager', 'util', 'event', 'message_buffer', 'exports'],
+       (Caramal, Manager,        Util,   Event,   MessageBuffer,    exports) ->
 
   class Channel extends Event
 
@@ -41,7 +42,9 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
        * 消息缓存区
        * @type {Array}
       ###
-      @message_buffer = []
+      # @signal_lamp = new SignalLamp()
+      # @message_disk = new MessageDisk()
+      @message_buffer = new MessageBuffer()
 
       ###*
        * 频道状态
