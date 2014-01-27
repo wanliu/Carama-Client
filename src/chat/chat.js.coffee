@@ -35,7 +35,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
     @beforeCommand 'open', (options = {}) ->
       @channel.setState('opening')
-      Util.merge options, { type: @channel.type, user: @channel.user }
+      Util.merge options, { type: @channel.type, user: @channel.user, group: @channel.id }
 
     @afterCommand 'open', (ret, room) ->
       @channel.setState('open')
@@ -46,7 +46,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
      * @param  {String} login  用户登陆名
      * @return {Chat}          Chat 对象
     ###
-    constructor: (@user, @options) ->
+    constructor: (@id, @options) ->
       super(@options)
 
     ###*
@@ -77,14 +77,14 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     being_input: () ->
       @socket.emit('inputing', {room: @room })
 
-    @create: (user, options = {}) ->
+    @create: (id, options = {}) ->
       manager = options.manager || @default_manager
-      manager.addNamedChannel(user, new Chat(user, options))
+      manager.addNamedChannel(id, new Chat(id, options))
 
-    @of: (user, options = {}) ->
+    @of: (id, options = {}) ->
       manager = options.manager || @default_manager
-      chat = manager.nameOfChannel(user)
-      chat || @create(user, options)
+      chat = manager.nameOfChannel(id)
+      chat || @create(id, options)
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
     if info.type == Channel.TYPES['chat']

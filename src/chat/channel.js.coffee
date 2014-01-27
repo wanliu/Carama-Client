@@ -18,7 +18,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       'close'
     ]
 
-    @nextId = 0
+    # @nextId = 0
 
     ###*
      * 管理器对象
@@ -35,7 +35,9 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
     constructor: (@options = {}) ->
       super
-      @id = Channel.nextId++
+      # @id = Channel.nextId++
+
+      @unreadMsgCount = 0
 
       ###*
        * 消息缓存区
@@ -66,6 +68,14 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
         @[name] = opt
 
     setState: (@_state) ->
+
+    setUnreadMsgCount: () ->
+      @unreadMsgCount =
+      if @manager.unreadMsgs && @manager.unreadMsgs[@group]
+        @manager.unreadMsgs[@group]
+      else
+        0
+      @emit('unreadMsgsSeted', {})
 
     getState: () ->
       @_state
@@ -128,6 +138,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * @param {MessageManager} @manager 消息管理器对象
     ###
     setManager: (@manager) ->
+      @manager.on 'resetUnreadMsgs', () =>
+        @setUnreadMsgCount()
 
     ###*
      * 激活频道，为了处理用户空闲，离开与消息通知等功能， 在用户进入输入时，实际上会自动调用

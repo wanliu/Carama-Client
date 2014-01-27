@@ -21,7 +21,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
       @channel.setState('open')
       @channel.room = room
 
-    constructor: (@group, @options) ->
+    constructor: (@id, @options) ->
       super(@options)
 
     ###*
@@ -41,14 +41,14 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
       @socket.emit('chat', msg)
 
-    @create: (group, options = {}) ->
+    @create: (id, options = {}) ->
       manager = options.manager || @default_manager
-      manager.addNamedChannel(group, new Group(group, options))
+      manager.addNamedChannel(id, new Group(id, options))
 
-    @of: (group, options = {}) ->
+    @of: (id, options = {}) ->
       manager = options.manager || @default_manager
-      channel = manager.nameOfChannel(group)
-      channel || @create(group, options)
+      channel = manager.nameOfChannel(id)
+      channel || @create(id, options)
 
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
