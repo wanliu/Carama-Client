@@ -32,6 +32,8 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
       @return_commands = {}
       @channels = {}
       return  unless @client?
+      @client.on 'connect', () =>
+        @clent.emit('get-unread', {}, @setUnreadMsg)
       # throw new Error('you must initialize window.client object!') unless @client?
       @bind()
 
@@ -55,6 +57,17 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
 
       @client.on 'chat', (data) =>
         @dispatch_process('message', data)
+
+      @client.emit 'get-unread', {}, (err, unreadMsgs) =>
+        @setUnreadMsg(err, unreadMsgs)
+
+      # @client.on 'reconnect', () =>
+      #   @clent.emit 'get-unread', {}, (err, unreadMsgs) =>
+      #     @setUnreadMsg(err, unreadMsgs)
+
+    setUnreadMsg: (err, unreadMsgs) ->
+      @unreadMsgs = unreadMsgs
+      @emit('resetUnreadMsgs', {})
 
     dispatch_process: (name, data) ->
       dispatch = @message_dispatchs[name]
