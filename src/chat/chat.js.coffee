@@ -101,6 +101,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
                 console.error('fails to join room! becouse of', err)
               else
                 channel.setState('open')
+                channel.emit('open')
                 Caramal.MessageManager.emit('channel:new', channel)
             )
           else if channel.room isnt info.room # 断线重连，Caramal-Server重启
@@ -110,7 +111,8 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
               else
                 channel.command('record', info.room)
                 channel.room = info.room
-                # channel.setState('open')
+                channel.setState('open')
+                channel.emit('open')
                 # Caramal.MessageManager.emit('channel:new', channel)
             )
         else

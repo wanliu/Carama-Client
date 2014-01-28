@@ -38,6 +38,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       @id = Channel.nextId++
 
       @unreadMsgCount = 0
+      @unreadFetchFlag = false
+      @onOpened()
 
       ###*
        * 消息缓存区
@@ -70,12 +72,42 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     setState: (@_state) ->
 
     setUnreadMsgCount: () ->
-      @unreadMsgCount =
       if @manager.unreadMsgs && @manager.unreadMsgs[@group]
-        @manager.unreadMsgs[@group]
+        @unreadMsgCount = @manager.unreadMsgs[@group]
+        @unreadFetchFlag = true
+        @unreadFetched = 0
+        @emit('unreadMsgsSeted', {})
+
+    onOpened: () ->
+      @on 'open', () =>
+        @fetchUnread()
+
+        #   start_index = @unreadFetched
+        #   step = if @unreadMsgCount - @unreadFetched > 10 then 10 else @unreadMsgCount - @unreadFetched
+        #   @history null, {room: @room, start: , step: }
+
+    fetchUnread: () ->
+      return unless @unreadFetchFlag
+      step = if @unreadMsgCount - @unreadFetched > 10 then 10 else @unreadMsgCount - @unreadFetched
+
+      fetch_options =
+      if @lastFetchedMsgTime?
+        type: "time_step",
+        room: @room,
+        start: @lastFetchedMsgTime,
+        step: step
       else
-        0
-      @emit('unreadMsgsSeted', {})
+        room: @room,
+        start: 1,
+        step: step
+
+      @socket.emit('history', fetch_options, (err, msgs) =>
+        return if msgs.length is 0
+        @lastFetchedMsgTime = 1 * msgs[0].time
+        @unreadFetched += msgs.length
+        @unreadFetchFlag = false if @unreadFetched is @setUnreadMsgCount
+        @emit('unreadMsgsFetched', msgs)
+      )
 
     getState: () ->
       @_state
