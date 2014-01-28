@@ -46,6 +46,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
        * @type {Array}
       ###
       @message_buffer = []
+      @unread_buffer = { theEnd: true, msgs: [] }
 
       ###*
        * 频道状态
@@ -103,10 +104,10 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       @socket.emit('history', fetch_options, (err, msgs) =>
         return if msgs.length is 0
-        @lastFetchedMsgTime = 1 * msgs[0].time
+        @lastFetchedMsgTime = 1 * msgs[0].time - 1
         @unreadFetched += msgs.length
         @unreadFetchFlag = false if @unreadFetched is @setUnreadMsgCount
-        @emit('unreadMsgsFetched', msgs)
+        @emit('unreadMsgsFetched', { msgs: msgs, theEnd: !@unreadFetchFlag })
       )
 
     getState: () ->
