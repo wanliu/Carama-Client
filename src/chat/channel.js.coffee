@@ -75,14 +75,25 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
     setUnreadMsgCount: () ->
       @unreadFetchFlagSeted = true
-      if @manager.unreadMsgs && @manager.unreadMsgs[@group]
-        @unreadMsgCount = @manager.unreadMsgs[@group]
+
+      # 
+      # {group: 'ruby', user: 'wanliutest88test'}
+      channel_name = if @group
+        @group
+      else if @user
+        user_name = @user
+        _.find _.keys(@manager.unreadMsgs), (channel) ->
+          _.find channel.split('-'), (name) ->
+            name is user_name
+
+      if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
+        @unreadMsgCount = @manager.unreadMsgs[channel_name]
         @unreadFetchFlag = true
         @fetchUnread() if @waitingForUnreadFetchFlagSet
         @unreadFetched = 0
         @emit('unreadMsgsSeted', {})
 
-      console.log('the state', @getState())
+      # console.log('the state', @getState())
 
     onOpened: () ->
       @on 'open', () =>
@@ -111,7 +122,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
           @unreadFetched += msgs.length
           @unreadFetchFlag = false if @unreadFetched >= @unreadMsgCount
           @emit('unreadMsgsFetched', { msgs: msgs, theEnd: !@unreadFetchFlag })
-          console.log('unreadMsgsFetched emited!')
+          # console.log('unreadMsgsFetched emited!')
         )
       else
         @waitingForUnreadFetchFlagSet = true
