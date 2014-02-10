@@ -76,7 +76,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     setUnreadMsgCount: () ->
       @unreadFetchFlagSeted = true
 
-      # 
+      # 根据类型来辨别频道
       # {group: 'ruby', user: 'wanliutest88test'}
       channel_name = if @group
         @group
@@ -160,6 +160,13 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     ###
     onMessage: (@message_callback, context) ->
       @on('message', @message_callback, context)
+
+    ###*
+     * 接受到系统消息数据的回调
+     * @param  {Function} message_callback 消息回调
+    ###
+    onSysMsg: (@meesage_callback, context) ->
+      @on('system_info', @message_callback, ontext)
 
     ###*
      * 来至服务端的命令回调

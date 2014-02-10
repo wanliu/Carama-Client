@@ -58,6 +58,9 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
       @client.on 'chat', (data) =>
         @dispatch_process('message', data)
 
+      @client.on 'system_info', (data) =>
+        @dispatch_process('system_info', data)
+
       @client.emit 'get-unread', {}, (err, unreadMsgs) =>
         @setUnreadMsg(err, unreadMsgs)
 
@@ -94,6 +97,7 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
       if @client?
         @client.unsubscribe('message')
         @client.unsubscribe('chat')
+        @client.unsubscribe('system_info')
 
     setClient: (@client) ->
       @bind()

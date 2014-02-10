@@ -129,6 +129,14 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     else
       next()
 
+  Caramal.MessageManager.registerDispatch 'system_info', (info, next) ->
+    Caramal.log('Receive System Message:', info)
+    channel = Caramal.MessageManager.roomOfChannel(info.room)
+    if channel?
+      channel.emit('system_info', info)
+    else
+      next()
+
 
   Caramal.MessageManager.registerDispatch 'event', (event, next) ->
 
