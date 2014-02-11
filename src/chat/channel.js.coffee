@@ -165,8 +165,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * 接受到系统消息数据的回调
      * @param  {Function} message_callback 消息回调
     ###
-    onSysMsg: (@meesage_callback, context) ->
-      @on('system_info', @message_callback, ontext)
+    onSysMsg: (@sys_msg_callback, context) ->
+      @on('system_info', @sys_msg_callback, context)
 
     ###*
      * 来至服务端的命令回调
