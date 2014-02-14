@@ -77,20 +77,27 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       @unreadFetchFlagSeted = true
 
       # 根据类型来辨别频道
-      # {group: 'ruby', user: 'wanliutest88test'}
+      # {
+      #   wanliu203-wanliutest88test: 2,
+      #   Ruby: 2,
+      #   temp:d0f19ec0-92f7-11e3-92dc-7f7a8813a637: 0
+      # }
       channel_name = if @group
         @group
       else if @user
         user_name = @user
         _.find _.keys(@manager.unreadMsgs), (channel) ->
-          _.find channel.split('-'), (name) ->
-            name is user_name
+          if clients && clients.current_user
+            channel is [user_name, clients.current_user].sort().join('-')
+          else
+            _.find channel.split('-'), (name) ->
+              name is user_name
 
       if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
         @unreadMsgCount = @manager.unreadMsgs[channel_name]
         @unreadFetchFlag = true
-        @fetchUnread() if @waitingForUnreadFetchFlagSet
         @unreadFetched = 0
+        @fetchUnread() if @waitingForUnreadFetchFlagSet
         @emit('unreadMsgsSeted', {})
 
       # console.log('the state', @getState())
