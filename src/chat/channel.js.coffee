@@ -7,7 +7,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * @type {Number}
     ###
     MAXIMUM_MESSAGES = 2000
-    HIS_FETCH_STEP = 10
+    # HIS_FETCH_STEP = 10
 
     ###*
      * 有效命令列表
@@ -94,45 +94,30 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
               name is user_name
 
       if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
-        @unreadMsgCount = @manager.unreadMsgs[channel_name]
-        @unreadFetchFlag = true
-        @unreadFetched = 0
-        @fetchUnread() if @waitingForUnreadFetchFlagSet
-        @emit('unreadMsgsSeted', {})
-
-      # console.log('the state', @getState())
+        unreadMsgCount = @manager.unreadMsgs[channel_name]
+        # @unreadFetchFlag = true
+        # @unreadFetched = 0
+        # @fetchUnread() if @waitingForUnreadFetchFlagSet
+        @emit('unreadMsgsSeted', unreadMsgCount)
 
     onOpened: () ->
       @on 'open', () =>
-        @fetchUnread()
+        @fetchMsgs()
 
-    fetchUnread: () ->
-      if @unreadFetchFlagSeted
-        return unless @unreadFetchFlag
-        fetch_count = @unreadMsgCount - @unreadFetched
-        step = if fetch_count > HIS_FETCH_STEP then HIS_FETCH_STEP else fetch_count
-
+    fetchMsgs: () ->
+      if !@hisMsgEnded
         fetch_options =
-        if @lastFetchedMsgTime?
           type: "time_step",
           room: @room,
-          start: @lastFetchedMsgTime,
-          step: step
-        else
-          room: @room,
-          start: 1,
-          step: step
+          start: @lastFetchedMsgTime || new Date().getTime()
 
-        @socket.emit('history', fetch_options, (err, msgs) =>
-          return if msgs.length is 0
-          @lastFetchedMsgTime = 1 * msgs[0].time - 1
-          @unreadFetched += msgs.length
-          @unreadFetchFlag = false if @unreadFetched >= @unreadMsgCount
-          @emit('unreadMsgsFetched', { msgs: msgs, theEnd: !@unreadFetchFlag })
-          # console.log('unreadMsgsFetched emited!')
-        )
-      else
-        @waitingForUnreadFetchFlagSet = true
+        @socket.emit 'history', fetch_options, (err, msgs) =>
+          if msgs.length is 0
+            @hisMsgEnded = true;
+            @emit('endOfHisMsg', {})
+          else
+            @lastFetchedMsgTime = 1 * msgs[0].time - 1
+            @emit('unreadMsgsFetched', { msgs: msgs })
 
     getState: () ->
       @_state
