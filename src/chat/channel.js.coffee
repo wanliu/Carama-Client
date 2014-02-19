@@ -98,7 +98,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
         unreadMsgCount = @manager.unreadMsgs[channel_name]
-        @emit('unreadMsgsSeted', unreadMsgCount.reverse())
+        @emit('unreadMsgsSeted', unreadMsgCount)
 
     onOpened: () ->
       @on 'open', () =>
@@ -117,8 +117,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
             @emit('endOfHisMsg', {})
           else
             @lastFetchedMsgTime = 1 * msgs[0].time - 1
-            @message_buffer = msgs
-            @emit('hisMsgsFetched', msgs)
+            @message_buffer = msgs.concat(@message_buffer)
+            @emit('hisMsgsFetched', {})
 
     getState: () ->
       @_state
