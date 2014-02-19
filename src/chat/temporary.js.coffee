@@ -19,6 +19,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @afterCommand 'open', (ret, room) ->
       @channel.setState('open')
+      @channel.emit('open')
       @channel.room = room
 
     constructor: (@group, @options) ->
