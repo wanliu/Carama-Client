@@ -47,7 +47,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
        * @type {Array}
       ###
       @message_buffer = []
-      @unread_buffer = { theEnd: true, msgs: [] }
+      # @unread_buffer = { theEnd: true, msgs: [] }
 
       ###*
        * 频道状态
@@ -66,6 +66,9 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       ###
       @bindSocket(@manager.client);
       @_buildCommands()
+
+    emptyBuffer: () ->
+      @message_buffer.length = 0
 
     setOptions: (options) ->
       for name, opt of options
@@ -117,7 +120,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
             @emit('endOfHisMsg', {})
           else
             @lastFetchedMsgTime = 1 * msgs[0].time - 1
-            @emit('unreadMsgsFetched', { msgs: msgs })
+            @message_buffer = msgs
+            @emit('hisMsgsFetched', msgs)
 
     getState: () ->
       @_state
