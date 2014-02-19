@@ -47,6 +47,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
        * @type {Array}
       ###
       @message_buffer = []
+      @hisMsgBuf = []
       # @unread_buffer = { theEnd: true, msgs: [] }
 
       ###*
@@ -67,8 +68,11 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       @bindSocket(@manager.client);
       @_buildCommands()
 
-    emptyBuffer: () ->
+    emptyNewBuf: () ->
       @message_buffer.length = 0
+
+    emptyHisBuf: () ->
+      @hisMsgBuf.length = 0
 
     setOptions: (options) ->
       for name, opt of options
@@ -117,8 +121,11 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
             @emit('endOfHisMsg', {})
           else
             @lastFetchedMsgTime = 1 * msgs[0].time - 1
-            @message_buffer = msgs.concat(@message_buffer)
+            @hisMsgBuf = msgs.concat(@hisMsgBuf)
             @emit('hisMsgsFetched', {})
+
+    resetHisInitTime: () ->
+      @lastFetchedMsgTime = null
 
     getState: () ->
       @_state
