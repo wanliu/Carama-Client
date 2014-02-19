@@ -98,10 +98,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
         unreadMsgCount = @manager.unreadMsgs[channel_name]
-        # @unreadFetchFlag = true
-        # @unreadFetched = 0
-        # @fetchUnread() if @waitingForUnreadFetchFlagSet
-        @emit('unreadMsgsSeted', unreadMsgCount)
+        @emit('unreadMsgsSeted', unreadMsgCount.reverse())
 
     onOpened: () ->
       @on 'open', () =>
