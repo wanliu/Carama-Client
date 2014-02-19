@@ -1,5 +1,8 @@
 define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, Util, Event, exports) ->
 
+  ON = true
+  OFF = false
+
   class Channel extends Event
 
     ###*
@@ -48,6 +51,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       ###
       @message_buffer = []
       @hisMsgBuf = []
+      # 避免同一时间多次获取
+      @hisFetchLock = OFF
       # @unread_buffer = { theEnd: true, msgs: [] }
 
       ###*
@@ -115,14 +120,26 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
           room: @room,
           start: @lastFetchedMsgTime || new Date().getTime()
 
-        @socket.emit 'history', fetch_options, (err, msgs) =>
-          if msgs.length is 0
-            @hisMsgEnded = true;
-            @emit('endOfHisMsg', {})
-          else
-            @lastFetchedMsgTime = 1 * msgs[0].time - 1
-            @hisMsgBuf = msgs.concat(@hisMsgBuf)
-            @emit('hisMsgsFetched', {})
+        if !@hisFetchLocked()
+          @lockHisFetchLock()
+          @socket.emit 'history', fetch_options, (err, msgs) =>
+            @freeHisFetchLock()
+            if msgs.length is 0
+              @hisMsgEnded = true;
+              @emit('endOfHisMsg', {})
+            else
+              @lastFetchedMsgTime = 1 * msgs[0].time - 1
+              @hisMsgBuf = msgs.concat(@hisMsgBuf)
+              @emit('hisMsgsFetched', {})
+
+    hisFetchLocked: () ->
+      @hisFetchLock is ON
+
+    lockHisFetchLock: () ->
+      @hisFetchLock = ON
+
+    freeHisFetchLock: () ->
+      @hisFetchLock = OFF
 
     resetHisInitTime: () ->
       @lastFetchedMsgTime = null
