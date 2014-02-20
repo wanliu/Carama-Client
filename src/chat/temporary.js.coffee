@@ -19,8 +19,8 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @afterCommand 'open', (ret, room) ->
       @channel.setState('open')
-      @channel.emit('open')
       @channel.room = room
+      @channel.emit('open')
 
     constructor: (@group, @options) ->
       super(@options)
@@ -67,8 +67,9 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
               if err?
                 console.error('fails to join room! becouse of', err)
               else
-                channel.setState('open')
-                channel.emit('open')
+                if channel.getState isnt 'open'
+                  channel.setState('open')
+                  channel.emit('open')
                 Caramal.MessageManager.emit('channel:new', channel)
             )
           else if channel.room isnt info.room  # 断线重连，Caramal-Server重启
