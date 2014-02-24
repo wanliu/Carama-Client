@@ -127,10 +127,12 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
         if !@hisFetchLocked()
           @lockHisFetchLock()
           @socket.emit 'history', fetch_options, (err, msgs) =>
+            if err?
+              console.log('fetch history error:', err)
+              return
             @freeHisFetchLock()
             endFlag = msgs.shift()
-            if endFlag is true
-              @hisMsgEnded = true
+            @hisMsgEnded = endFlag
             if msgs.length > 0
               @lastFetchedMsgTime = (1 * msgs[0].time - 1)
             @hisMsgBuf = msgs.concat(@hisMsgBuf)
