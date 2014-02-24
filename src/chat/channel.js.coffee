@@ -111,7 +111,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
         @emit('unreadMsgsSeted', unreadMsgCount)
 
     onOpened: () ->
-      if @getState is "open"
+      if @getState() is "open"
         @fetchMsgs()
       else
         @on 'open', () =>
