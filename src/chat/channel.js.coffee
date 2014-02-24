@@ -43,6 +43,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
 
       @unreadMsgCount = 0
       @unreadFetchFlag = false
+      @hisMsgEnded = false
       @onOpened()
 
       ###*
@@ -127,13 +128,11 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
           @lockHisFetchLock()
           @socket.emit 'history', fetch_options, (err, msgs) =>
             @freeHisFetchLock()
-            if msgs.length is 0
-              @hisMsgEnded = true;
-              @emit('endOfHisMsg', {})
-            else
-              @lastFetchedMsgTime = 1 * msgs[0].time - 1
-              @hisMsgBuf = msgs.concat(@hisMsgBuf)
-              @emit('hisMsgsFetched', {})
+            endFlag = msgs.shift()
+            @hisMsgEnded = true if endFlag is true
+            @lastFetchedMsgTime = (1 * msgs[0].time - 1) if msgs.length > 0
+            @hisMsgBuf = msgs.concat(@hisMsgBuf)
+            @emit('hisMsgsFetched', {})
 
     hisFetchLocked: () ->
       @hisFetchLock is ON
