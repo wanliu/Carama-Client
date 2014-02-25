@@ -15,7 +15,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @beforeCommand 'open', (options = {}) ->
       @channel.setState('opening')
-      Util.merge options, { type: @channel.type, group: @channel.name }
+      Util.merge options, { type: @channel.type, group: @channel.group }
 
     @afterCommand 'open', (ret, room) ->
       @channel.setState('open')
