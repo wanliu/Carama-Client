@@ -95,9 +95,8 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       #   Ruby: 2,
       #   temp:d0f19ec0-92f7-11e3-92dc-7f7a8813a637: 0
       # }
-      channel_name = if @group
-        @group
-      else if @user
+      channel_name =
+      if @user
         user_name = @user
         _.find _.keys(@manager.unreadMsgs), (channel) ->
           if clients && clients.current_user
@@ -105,6 +104,10 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
           else
             _.find channel.split('-'), (name) ->
               name is user_name
+      else if @token
+        @token
+      else
+        @group
 
       if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
         unreadMsgCount = @manager.unreadMsgs[channel_name]
