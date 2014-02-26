@@ -42,7 +42,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       @id = Channel.nextId++
 
       @unreadMsgCount = null
-      @unreadFetchFlag = false
+      # @unreadFetchFlag = false
       @hisMsgEnded = false
       @onOpened()
 
