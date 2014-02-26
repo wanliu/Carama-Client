@@ -41,7 +41,7 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
       super
       @id = Channel.nextId++
 
-      @unreadMsgCount = 0
+      @unreadMsgCount = null
       @unreadFetchFlag = false
       @hisMsgEnded = false
       @onOpened()
@@ -87,15 +87,20 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     setState: (@_state) ->
 
     setUnreadMsgCount: () ->
-      @unreadFetchFlagSeted = true
+      channelName = @getChannelName()
+      if channelName && @manager.unreadMsgs && @manager.unreadMsgs[channelName]
+        @unreadMsgCount = @manager.unreadMsgs[channelName]
+      else
+        @unreadMsgCount = 0
+      @emit('unreadMsgsSeted')
 
-      # 根据类型来辨别频道
-      # {
-      #   wanliu203-wanliutest88test: 2,
-      #   Ruby: 2,
-      #   temp:d0f19ec0-92f7-11e3-92dc-7f7a8813a637: 0
-      # }
-      channel_name =
+    # 根据类型来辨别频道
+    # {
+    #   wanliu203-wanliutest88test: 2,
+    #   Ruby: 2,
+    #   temp:d0f19ec0-92f7-11e3-92dc-7f7a8813a637: 0
+    # }
+    getChannelName: () ->
       if @user
         user_name = @user
         _.find _.keys(@manager.unreadMsgs), (channel) ->
@@ -108,10 +113,6 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
         @token
       else
         @group
-
-      if channel_name && @manager.unreadMsgs && @manager.unreadMsgs[channel_name]
-        unreadMsgCount = @manager.unreadMsgs[channel_name]
-        @emit('unreadMsgsSeted', unreadMsgCount)
 
     onOpened: () ->
       if @getState() is "open"
@@ -221,8 +222,11 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
      * @param {MessageManager} @manager 消息管理器对象
     ###
     setManager: (@manager) ->
-      @manager.on 'resetUnreadMsgs', () =>
+      if @manager.unreadMsgs?
         @setUnreadMsgCount()
+      else
+        @manager.on 'resetUnreadMsgs', () =>
+          @setUnreadMsgCount()
 
     ###*
      * 激活频道，为了处理用户空闲，离开与消息通知等功能， 在用户进入输入时，实际上会自动调用
