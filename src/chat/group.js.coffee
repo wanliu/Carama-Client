@@ -72,7 +72,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
           #       Caramal.MessageManager.emit('channel:new', channel)
           #   )
           unless channel?
-            channel = Group.create(info.from, {room: info.room})
+            channel = Group.create(info.title, {room: info.room})
             channel.command('join', info.room, {}, (ch, err, msg) ->
               if err?
                 console.error('fails to join room! becouse of', err)

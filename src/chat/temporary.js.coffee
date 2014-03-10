@@ -60,9 +60,9 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
     switch info.action
       when 'join'
         if info.type is Channel.TYPES['temporary']
-          channel = Caramal.MessageManager.nameOfChannel(info.group)
+          channel = Caramal.MessageManager.nameOfChannel(info.title)
           unless channel?
-            channel = Temporary.create(info.group, {room: info.room, name: info.name})
+            channel = Temporary.create(info.title, {room: info.room, name: info.name})
             channel.command('join', info.room, {}, (ch, err, msg) ->
               if err?
                 console.error('fails to join room! becouse of', err)
