@@ -60,7 +60,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
     switch info.action
       when 'join'
         if info.type is Channel.TYPES['group']
-          channel = Caramal.MessageManager.nameOfChannel(info.group, Channel.TYPES['group'])
+          channel = Caramal.MessageManager.nameOfChannel(info.title, Channel.TYPES['group'])
 
           # unless channel? && channel.room is info.room
           #   channel = Group.create(info.group, {room: info.room})
