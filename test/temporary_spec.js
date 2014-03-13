@@ -35,7 +35,7 @@ define(['caramal', 'chat'], function(Caramal) {
       }));
 
       client.on('message', function(info){
-        group = Caramal.MessageManager.nameOfChannel(token);
+        group = Caramal.MessageManager.nameOfChannel(token, Channel.TYPES['temporary']);
         // group.room.should.eql('5858518');
         done();
       });

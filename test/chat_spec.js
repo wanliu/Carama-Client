@@ -53,7 +53,7 @@ define(['caramal', 'chat'], function(Caramal) {
       });
 
       client.on('message', function(info){
-        chat = Caramal.MessageManager.nameOfChannel('hyysios');
+        chat = Caramal.MessageManager.nameOfChannel('hyysios', Channel.TYPES['chat']);
         chat.room.should.eql('123412341234');
         done();
       });

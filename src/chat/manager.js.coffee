@@ -30,7 +30,7 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
       super
       @message_dispatchs = {}
       @return_commands = {}
-      @channels = {}
+      @channels = { 0: {}, 1: {}, 2: {}, 3: {} }
       return  unless @client?
       @client.on 'connect', () =>
         @clent.emit('get-unread', {}, @setUnreadMsg)
@@ -109,23 +109,26 @@ define ['core', 'event', 'exports'], (Caramal, Event, exports) ->
     onError: (e) ->
       console.log(e)
 
-    addChannel: (id, channel) ->
-      @channels[id.toString()] = channel
+    addChannel: (id, channel, type) ->
+      @channels[type][id.toString()] = channel
 
-    addNamedChannel: (name, channel) ->
-      @channels[name] = channel
+    addNamedChannel: (name, channel, type) ->
+      @channels[type][name] = channel
 
-    ofChannel: (id) ->
-      @channels[id.toString()]
+    ofChannel: (id, type) ->
+      @channels[type][id.toString()]
 
-    nameOfChannel: (name) ->
-      @channels[name]
+    nameOfChannel: (name, type) ->
+      @channels[type][name]
 
     roomOfChannel: (room) ->
-      for id, chn of @channels
-        if chn.room == room
-          return chn
-      null
+      chat = null
+      for i, chns of @channels
+        for id, chn of chns
+          if chn.room == room
+            chat = chn
+            break
+      chat
 
 
   Caramal.MessageManager ||= new ClientMessageManager(window.client)

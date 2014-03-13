@@ -282,13 +282,13 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
           else
             ;
 
-    @create: (options = {}) ->
+    @create: (options = {}, type) ->
       manager = options.manager || @default_manager
-      manager.addChannel(Channel.nextId, new Channel(options))
+      manager.addChannel(Channel.nextId, new Channel(options), type)
 
-    @of: (id) ->
+    @of: (id, type) ->
       manager = options.manager || @default_manager
-      manager.ofChannel(id)
+      manager.ofChannel(id, type)
 
     @beforeCommand: (cmd, callback) ->
       @prototype.hooks["before_#{cmd}"] = {

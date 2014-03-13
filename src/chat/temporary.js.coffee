@@ -44,11 +44,11 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
 
     @create: (group, options = {}) ->
       manager = options.manager || @default_manager
-      manager.addNamedChannel(group, new Temporary(group, options))
+      manager.addNamedChannel(group, new Temporary(group, options), Channel.TYPES['temporary'])
 
     @of: (group, options = {}) ->
       manager = options.manager || @default_manager
-      channel = manager.nameOfChannel(group)
+      channel = manager.nameOfChannel(group, Channel.TYPES['temporary'])
       channel || @create(group, options)
 
 
@@ -60,7 +60,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
     switch info.action
       when 'join'
         if info.type is Channel.TYPES['temporary']
-          channel = Caramal.MessageManager.nameOfChannel(info.title)
+          channel = Caramal.MessageManager.nameOfChannel(info.title, Channel.TYPES['temporary'])
           unless channel?
             channel = Temporary.create(info.title, {room: info.room, name: info.name})
             channel.command('join', info.room, {}, (ch, err, msg) ->

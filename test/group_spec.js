@@ -34,7 +34,7 @@ define(['caramal', 'chat'], function(Caramal) {
       }));
 
       client.on('message', function(info){
-        group = Caramal.MessageManager.nameOfChannel('hunan people');
+        group = Caramal.MessageManager.nameOfChannel('hunan people', Channel.TYPES['group']);
         group.room.should.eql('483848343434');
         done();
       });

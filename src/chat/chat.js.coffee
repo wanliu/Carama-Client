@@ -80,11 +80,11 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
 
     @create: (user, options = {}) ->
       manager = options.manager || @default_manager
-      manager.addNamedChannel(user, new Chat(user, options))
+      manager.addNamedChannel(user, new Chat(user, options), Channel.TYPES['chat'])
 
     @of: (user, options = {}) ->
       manager = options.manager || @default_manager
-      chat = manager.nameOfChannel(user)
+      chat = manager.nameOfChannel(user, Channel.TYPES['chat'])
       chat || @create(user, options)
 
   Caramal.MessageManager.registerDispatch 'command', (info, next) ->
@@ -94,7 +94,7 @@ define ['core', 'chat/channel', 'chat/manager', 'util', 'exports'], (Caramal, Ch
     switch info.action
       when 'join'
         if info.type == Channel.TYPES['chat']
-          channel = Caramal.MessageManager.nameOfChannel(info.title)
+          channel = Caramal.MessageManager.nameOfChannel(info.title, Channel.TYPES['chat'])
           unless channel?
             channel = Chat.create(info.title, {room: info.room})
             channel.command('join', info.room, {}, (ch, err, msg) ->
