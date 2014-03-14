@@ -102,13 +102,14 @@ define ['core', 'chat/manager', 'util', 'event', 'exports'], (Caramal, Manager, 
     # }
     getChannelName: () ->
       if @user
-        user_name = @user
-        _.find _.keys(@manager.unreadMsgs), (channel) ->
-          if clients && clients.current_user
-            channel is [user_name, clients.current_user].sort().join('-')
-          else
-            _.find channel.split('-'), (name) ->
-              name is user_name
+        # user_name = @user
+        # _.find _.keys(@manager.unreadMsgs), (channel) ->
+        #   if clients && clients.current_user
+        #     channel is [user_name, clients.current_user].sort().join('-')
+        #   else
+        #     _.find channel.split('-'), (name) ->
+        #       name is user_name
+        @user
       else if @token
         @token
       else
