@@ -72,7 +72,7 @@ define ['core', 'chat/channel', 'chat/chat', 'util', 'exports'], (Caramal, Chann
                   channel.emit('open')
                 Caramal.MessageManager.emit('channel:new', channel)
             )
-          else if channel.room isnt info.room  # 断线重连，Caramal-Server重启
+          else# if channel.room isnt info.room  # 断线重连，Caramal-Server重启
             channel.command('join', info.room, {}, (ch, err, msg) ->
               if err?
                 console.error('fails to join room! becouse of', err)
